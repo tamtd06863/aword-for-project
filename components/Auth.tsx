@@ -13,12 +13,12 @@ import { supabase } from "@/lib/supabase";
 
 const Auth = () => {
   const [state, setState] = React.useState<{ userInfo?: any }>({});
-  const userId = useAppSelector((state) => state.auth.auth.userId);
+  const user = useAppSelector((state) => state.auth.auth);
   const dispatch = useAppDispatch();
 
   React.useEffect(() => {
-    console.log("userInfo changed", state.userInfo);
-  }, [state]);
+    console.log("userInfo changed", user);
+  }, [user]);
 
   const signIn = async () => {
     try {
@@ -29,7 +29,7 @@ const Auth = () => {
 
       const { data, error } = await supabase.auth.signInWithIdToken({
         provider: "google",
-        token: response.data?.idToken,
+        token: response.data!.idToken!,
       });
 
       if (error) {
@@ -61,8 +61,8 @@ const Auth = () => {
 
   return (
     <>
-      {state.userInfo ? (
-        <Text>Welcome {state.userInfo.user.name}</Text>
+      {user.userId ? (
+        <Text>Welcome {user.name}</Text>
       ) : (
         <Button title={"Sign in with Google"} onPress={signIn} />
       )}

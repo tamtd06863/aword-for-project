@@ -2,7 +2,6 @@ import { Stack } from "expo-router";
 import "./global.css";
 import { vars, useColorScheme } from "nativewind";
 import { View } from "react-native";
-import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { Provider } from "react-redux";
 import { makeStore, AppStore } from "@/lib/store";
 import React from "react";
@@ -45,34 +44,6 @@ function StoreProvider({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout() {
-  GoogleSignin.configure({
-    scopes: ["https://www.googleapis.com/auth/drive.readonly"],
-    webClientId:
-      "201454684001-c3febejgt4d32htaq0hhbu9qe223qkia.apps.googleusercontent.com",
-    offlineAccess: false, // if you want to access Google API on behalf of the user FROM YOUR SERVER
-    forceCodeForRefreshToken: false, // [Android] related to `serverAuthCode`, read the docs link below *.
-  });
-
-  const getCurrentUser = async () => {
-    try {
-      const response = await GoogleSignin.signInSilently();
-      if (isSuccessResponse(response)) {
-        setState({ userInfo: response.data });
-      } else if (isNoSavedCredentialFoundResponse(response)) {
-        // user has not signed in yet, or they have revoked access
-      }
-    } catch (error) {
-      // handle errror
-    }
-  };
-
-  React.useEffect(() => {
-    const fetchUser = async () => {
-      await getCurrentUser();
-    };
-    fetchUser().then((r) => {});
-  }, []);
-
   return (
     <StoreProvider>
       <Theme>
