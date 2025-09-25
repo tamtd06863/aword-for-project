@@ -1,8 +1,7 @@
+import { Ionicons } from "@expo/vector-icons";
+import { Stack, useRouter } from "expo-router";
 import React from "react";
-import {Stack} from "expo-router";
-import {useRouter} from "expo-router";
-import {TextInput, TouchableOpacity, View} from "react-native";
-import {Ionicons} from "@expo/vector-icons";
+import { TextInput, TouchableOpacity, View } from "react-native";
 
 const LearnLayout = () => {
     const router = useRouter();
