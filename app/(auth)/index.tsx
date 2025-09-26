@@ -1,11 +1,18 @@
 import { Button, Text, View } from "react-native";
 import { Link } from "expo-router";
 import Auth from "@/components/Auth";
+import { useAppSelector } from "@/lib/hooks";
 
 export default function Index() {
+  const user = useAppSelector((state) => state.auth.auth);
+
   return (
     <View className={"flex-1 items-center justify-center bg-background px-4"}>
-      <Auth></Auth>
+      {!user?.userId ? (
+        <Auth />
+      ) : (
+        <Text className={"text-lg"}>Welcome, {user.name}</Text>
+      )}
       <Text className={"text-2xl text-primary"}>Login</Text>
       <Link href={"/home"} asChild>
         <Button title={"Sign In"} onPress={() => {}} />

@@ -1,16 +1,13 @@
 import React from "react";
-import { Button, Text } from "react-native";
+import { Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "@/lib/supabase";
+import SignOutButton from "@/components/sign-out-button";
 
 const Profile = () => {
-  const logout = async () => {
-    await supabase.auth.signOut();
-  };
-
   return (
     <SafeAreaView>
-      <Button title={"Logout"} onPress={logout} />
+      <SignOutButton />
       <Text>Profile Page</Text>
     </SafeAreaView>
   );
