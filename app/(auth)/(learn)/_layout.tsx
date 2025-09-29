@@ -48,8 +48,8 @@ const LearnLayout = () => {
                 style={{
                   backgroundColor: colors.primary.main,
                   paddingHorizontal: 12,
-                  paddingTop: 20,
-                  paddingBottom: 20,
+                  paddingTop: 40,
+                  paddingBottom: 30,
                   flexDirection: "row",
                   alignItems: "center",
                   borderBottomLeftRadius: 16,

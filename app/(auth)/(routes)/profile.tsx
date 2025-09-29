@@ -1,19 +1,81 @@
+import { useAppSelector } from "@/lib/hooks";
 import { supabase } from "@/lib/supabase";
 import { getColors } from "@/utls/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useColorScheme } from "nativewind";
-import React from "react";
-import { Image, Pressable, Text, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, Image, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+interface UserStats {
+  streaks: number;
+  totalExp: number;
+  currentLeague: string;
+  topFinishes: number;
+}
 
 const Profile = () => {
   const { colorScheme } = useColorScheme();
   const colors = getColors(colorScheme === "dark");
+  const user = useAppSelector((state) => state.auth.auth);
+
+  const [stats, setStats] = useState<UserStats>({
+    streaks: 0,
+    totalExp: 0,
+    currentLeague: "Bronze",
+    topFinishes: 0,
+  });
+  const [loading, setLoading] = useState(true);
 
   const logout = async () => {
     await supabase.auth.signOut();
   };
+
+  const fetchUserStats = async () => {
+    try {
+      setLoading(true);
+
+      // Set default stats for now (until user_stats table is created)
+      setStats({
+        streaks: 7,
+        totalExp: 1250,
+        currentLeague: "Silver",
+        topFinishes: 3,
+      });
+
+      // TODO: Uncomment when user_stats table is created in Supabase
+      // const { data: userStats, error } = await supabase
+      //   .from("user_stats")
+      //   .select("*")
+      //   .eq("user_id", user.userId)
+      //   .single();
+
+      // if (error && error.code !== "PGRST116") {
+      //   console.error("Error fetching user stats:", error);
+      //   return;
+      // }
+
+      // if (userStats) {
+      //   setStats({
+      //     streaks: userStats.streaks || 0,
+      //     totalExp: userStats.total_exp || 0,
+      //     currentLeague: userStats.current_league || "Bronze",
+      //     topFinishes: userStats.top_finishes || 0,
+      //   });
+      // }
+    } catch (error) {
+      console.error("Error setting default user stats:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user.userId) {
+      fetchUserStats();
+    }
+  }, [user.userId]);
 
   const StatCard = ({
     icon,
@@ -89,7 +151,9 @@ const Profile = () => {
         <View className="items-center">
           <View className="w-24 h-24 rounded-full items-center justify-center">
             <Image
-              source={{ uri: "https://i.pravatar.cc/100" }}
+              source={{
+                uri: user.avatar_url || "https://i.pravatar.cc/100",
+              }}
               className="w-20 h-20 rounded-full"
             />
           </View>
@@ -105,26 +169,19 @@ const Profile = () => {
           className="text-3xl font-semibold text-center mb-2"
           style={{ color: colors.text.primary }}
         >
-          hhaoz
+          {user.name || "User"}
         </Text>
         <View className="flex-row items-center justify-center">
           <Text className="text-base" style={{ color: colors.text.secondary }}>
-            @hhaoz
-          </Text>
-          <View
-            className="w-1 h-1 rounded-full mx-2"
-            style={{ backgroundColor: colors.text.secondary }}
-          />
-          <Text className="text-base" style={{ color: colors.text.secondary }}>
-            Joined at May 7th 2025
+            {user.email || "No email"}
           </Text>
         </View>
       </View>
 
       {/* Statistics Section */}
-      <View className="flex-1 px-6">
+      <View className="flex-1 px-6 pt-8">
         <Text
-          className="text-xl font-bold mb-4"
+          className="text-xl font-bold mb-6"
           style={{ color: colors.text.primary }}
         >
           Statistics
@@ -132,37 +189,48 @@ const Profile = () => {
 
         {/* Statistics Grid */}
         <View className="flex-1">
-          {/* Top Row */}
-          <View className="flex-row mb-3">
-            <StatCard
-              icon="flame"
-              value="20"
-              label="Streaks"
-              iconColor="#FF6B35"
-            />
-            <StatCard
-              icon="flash"
-              value="1234"
-              label="Total exp"
-              iconColor="#FFD23F"
-            />
-          </View>
+          {loading ? (
+            <View className="flex-1 justify-center items-center">
+              <ActivityIndicator size="large" color={colors.primary.main} />
+              <Text className="mt-4" style={{ color: colors.text.secondary }}>
+                Loading statistics...
+              </Text>
+            </View>
+          ) : (
+            <>
+              {/* Top Row */}
+              <View className="flex-row mb-3">
+                <StatCard
+                  icon="flame"
+                  value={stats.streaks.toString()}
+                  label="Streaks"
+                  iconColor={colors.accent.orange}
+                />
+                <StatCard
+                  icon="flash"
+                  value={stats.totalExp.toString()}
+                  label="Total exp"
+                  iconColor={colors.accent.yellow}
+                />
+              </View>
 
-          {/* Bottom Row */}
-          <View className="flex-row">
-            <StatCard
-              icon="diamond"
-              value="Gold"
-              label="Current league"
-              iconColor="#FFD700"
-            />
-            <StatCard
-              icon="trophy"
-              value="20"
-              label="Top 1 finishes"
-              iconColor="#FFD700"
-            />
-          </View>
+              {/* Bottom Row */}
+              <View className="flex-row">
+                <StatCard
+                  icon="diamond"
+                  value={stats.currentLeague}
+                  label="Current league"
+                  iconColor={colors.accent.yellow}
+                />
+                <StatCard
+                  icon="trophy"
+                  value={stats.topFinishes.toString()}
+                  label="Top 1 finishes"
+                  iconColor={colors.accent.yellow}
+                />
+              </View>
+            </>
+          )}
         </View>
       </View>
     </SafeAreaView>
