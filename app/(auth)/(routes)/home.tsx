@@ -1,4 +1,5 @@
 import { useAppSelector } from "@/lib/hooks";
+import { getColors } from "@/utls/colors";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, router } from "expo-router";
 import LottieView from "lottie-react-native";
@@ -12,6 +13,8 @@ const Home = () => {
   const gradientAnimation = useRef(new Animated.Value(0)).current;
   const user = useAppSelector((state) => state.auth.auth);
   const { colorScheme } = useColorScheme();
+
+  const colors = getColors(colorScheme === "dark");
 
   useEffect(() => {
     flameAnimation.current?.play();
@@ -68,7 +71,7 @@ const Home = () => {
               <Ionicons
                 name="settings-outline"
                 size={32}
-                color={colorScheme === "dark" ? "white" : "black"}
+                color={colors.text.primary}
               />
             </Pressable>
           </Link>
@@ -107,48 +110,76 @@ const Home = () => {
 
       {/* Menu buttons */}
       <Link href={"/learning"} asChild>
-        <Pressable className="mb-6 bg-primary dark:bg-primary-700 rounded-2xl shadow-sm">
+        <Pressable
+          className="mb-6 rounded-2xl shadow-sm"
+          style={{ backgroundColor: colors.primary.main }}
+        >
           <View className="flex-row items-center p-5">
             <MaterialCommunityIcons
               name="book-open-page-variant"
               size={48}
-              color="white"
+              color={colors.text.button}
             />
             <View className="ml-5">
-              <Text className="font-semibold text-3xl text-white">
+              <Text
+                className="font-semibold text-3xl"
+                style={{ color: colors.text.button }}
+              >
                 Learning
               </Text>
-              <Text className="text-primary-100 text-lg">lesson #20</Text>
+              <Text className="text-lg" style={{ color: colors.text.button }}>
+                lesson #20
+              </Text>
             </View>
           </View>
         </Pressable>
       </Link>
 
       <Link href={"/flashcard"} asChild>
-        <Pressable className="mb-6 bg-primary dark:bg-primary-700 rounded-2xl shadow-sm">
+        <Pressable
+          className="mb-6 rounded-2xl shadow-sm"
+          style={{ backgroundColor: colors.primary.main }}
+        >
           <View className="flex-row items-center p-5">
             <MaterialCommunityIcons
               name="cards-outline"
               size={48}
-              color="white"
+              color={colors.text.button}
             />
             <View className="ml-5">
-              <Text className="font-semibold text-3xl text-white">
+              <Text
+                className="font-semibold text-3xl"
+                style={{ color: colors.text.button }}
+              >
                 Flashcard
               </Text>
-              <Text className="text-primary-100 text-lg">No. of card 30</Text>
+              <Text className="text-lg" style={{ color: colors.text.button }}>
+                No. of card 30
+              </Text>
             </View>
           </View>
         </Pressable>
       </Link>
 
       <Link href={"/wordex"} asChild>
-        <Pressable className="mb-6 bg-primary dark:bg-primary-700 rounded-2xl shadow-sm">
+        <Pressable
+          className="mb-6 rounded-2xl shadow-sm"
+          style={{ backgroundColor: colors.primary.main }}
+        >
           <View className="flex-row items-center p-5">
-            <Ionicons name="search-outline" size={48} color="white" />
+            <Ionicons
+              name="search-outline"
+              size={48}
+              color={colors.text.button}
+            />
             <View className="ml-5">
-              <Text className="font-semibold text-3xl text-white">Wordex</Text>
-              <Text className="text-primary-100 text-lg">
+              <Text
+                className="font-semibold text-3xl"
+                style={{ color: colors.text.button }}
+              >
+                Wordex
+              </Text>
+              <Text className="text-lg" style={{ color: colors.text.button }}>
                 Looking for a word
               </Text>
             </View>
@@ -157,14 +188,24 @@ const Home = () => {
       </Link>
 
       <Link href={"/leaderboard"} asChild>
-        <Pressable className="mb-6 bg-primary dark:bg-primary-700 rounded-2xl shadow-sm">
+        <Pressable
+          className="mb-6 rounded-2xl shadow-sm"
+          style={{ backgroundColor: colors.primary.main }}
+        >
           <View className="flex-row items-center p-5">
-            <Ionicons name="ribbon-outline" size={48} color="white" />
+            <Ionicons
+              name="ribbon-outline"
+              size={48}
+              color={colors.text.button}
+            />
             <View className="ml-5">
-              <Text className="font-semibold text-3xl text-white">
+              <Text
+                className="font-semibold text-3xl"
+                style={{ color: colors.text.button }}
+              >
                 Leaderboard
               </Text>
-              <Text className="text-primary-100 text-lg">
+              <Text className="text-lg" style={{ color: colors.text.button }}>
                 Your learning rank
               </Text>
             </View>

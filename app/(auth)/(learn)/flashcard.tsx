@@ -1,3 +1,4 @@
+import { getColors } from "@/utls/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useColorScheme } from "nativewind";
 import React, { useRef, useState } from "react";
@@ -10,6 +11,8 @@ const Flashcard = () => {
   const { colorScheme } = useColorScheme();
   const [isFlipped, setIsFlipped] = useState(false);
   const flipAnimation = useRef(new Animated.Value(0)).current;
+
+  const colors = getColors(colorScheme === "dark");
 
   const flipCard = () => {
     if (isFlipped) {
@@ -49,7 +52,10 @@ const Flashcard = () => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
+    <SafeAreaView
+      className="flex-1"
+      style={{ backgroundColor: colors.background.primary }}
+    >
       <View className="flex-1 justify-center items-center">
         {/* Flashcard Container */}
         <View className="relative w-full max-w-sm h-80">
@@ -66,12 +72,13 @@ const Flashcard = () => {
           >
             <Pressable
               onPress={flipCard}
-              className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg justify-center items-center self-center"
+              className="rounded-2xl shadow-lg justify-center items-center self-center"
               style={{
                 width: 320,
                 height: 320,
                 padding: 24,
-                shadowColor: "#000",
+                backgroundColor: colors.background.secondary,
+                shadowColor: colors.text.primary,
                 shadowOffset: { width: 0, height: 4 },
                 shadowOpacity: 0.1,
                 shadowRadius: 8,
@@ -80,11 +87,18 @@ const Flashcard = () => {
             >
               {/* Refresh Button */}
               <Pressable className="absolute top-4 right-4">
-                <Ionicons name="refresh" size={20} color="#666" />
+                <Ionicons
+                  name="refresh"
+                  size={20}
+                  color={colors.text.secondary}
+                />
               </Pressable>
 
               {/* Word */}
-              <Text className="text-4xl font-bold text-black dark:text-white text-center mb-4">
+              <Text
+                className="text-4xl font-bold text-center mb-4"
+                style={{ color: colors.text.primary }}
+              >
                 adventure
               </Text>
 
@@ -94,7 +108,8 @@ const Flashcard = () => {
                   {[...Array(8)].map((_, i) => (
                     <View
                       key={i}
-                      className="w-2 h-1 bg-yellow-400 rounded-full mx-1"
+                      className="w-2 h-1 rounded-full mx-1"
+                      style={{ backgroundColor: colors.accent.yellow }}
                     />
                   ))}
                 </View>
@@ -115,12 +130,13 @@ const Flashcard = () => {
           >
             <Pressable
               onPress={flipCard}
-              className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg justify-center self-center"
+              className="rounded-2xl shadow-lg justify-center self-center"
               style={{
                 width: 320,
                 height: 320,
                 padding: 24,
-                shadowColor: "#000",
+                backgroundColor: colors.background.secondary,
+                shadowColor: colors.text.primary,
                 shadowOffset: { width: 0, height: 4 },
                 shadowOpacity: 0.1,
                 shadowRadius: 8,
@@ -129,66 +145,119 @@ const Flashcard = () => {
             >
               {/* Refresh Button */}
               <Pressable className="absolute top-4 right-4">
-                <Ionicons name="refresh" size={20} color="#666" />
+                <Ionicons
+                  name="refresh"
+                  size={20}
+                  color={colors.text.secondary}
+                />
               </Pressable>
 
               {/* Word with Syllables */}
               <View className="flex-row items-center mb-2">
                 <View className="flex-row items-center">
-                  <Text className="text-red-500 text-lg font-semibold">ad</Text>
-                  <Text className="text-gray-400 text-sm mx-1">•</Text>
-                  <Text className="text-black dark:text-white text-lg font-semibold">
+                  <Text
+                    className="text-lg font-semibold"
+                    style={{ color: colors.accent.red }}
+                  >
+                    ad
+                  </Text>
+                  <Text
+                    className="text-sm mx-1"
+                    style={{ color: colors.text.secondary }}
+                  >
+                    •
+                  </Text>
+                  <Text
+                    className="text-lg font-semibold"
+                    style={{ color: colors.text.primary }}
+                  >
                     vent
                   </Text>
-                  <Text className="text-gray-400 text-sm mx-1">•</Text>
-                  <Text className="text-green-500 text-lg font-semibold">
+                  <Text
+                    className="text-sm mx-1"
+                    style={{ color: colors.text.secondary }}
+                  >
+                    •
+                  </Text>
+                  <Text
+                    className="text-lg font-semibold"
+                    style={{ color: colors.accent.green }}
+                  >
                     ure
                   </Text>
                 </View>
                 <Pressable className="ml-3">
-                  <Ionicons name="volume-high" size={16} color="#666" />
+                  <Ionicons
+                    name="volume-high"
+                    size={16}
+                    color={colors.text.secondary}
+                  />
                 </Pressable>
               </View>
 
               {/* Pronunciation */}
-              <Text className="text-gray-600 dark:text-gray-400 text-sm mb-3">
+              <Text
+                className="text-sm mb-3"
+                style={{ color: colors.text.secondary }}
+              >
                 /əd'ven(t)SHər/
               </Text>
 
               {/* Word Type */}
-              <Text className="text-gray-500 dark:text-gray-400 text-sm absolute top-4 left-6">
+              <Text
+                className="text-sm absolute top-4 left-6"
+                style={{ color: colors.text.secondary }}
+              >
                 noun
               </Text>
 
               {/* Translation */}
-              <Text className="text-black dark:text-white text-lg font-medium mb-3">
+              <Text
+                className="text-lg font-medium mb-3"
+                style={{ color: colors.text.primary }}
+              >
                 Chuyến phiêu lưu, mạo hiểm
               </Text>
 
               {/* Example */}
-              <Text className="text-gray-500 dark:text-gray-400 text-sm mb-6">
+              <Text
+                className="text-sm mb-6"
+                style={{ color: colors.text.secondary }}
+              >
                 Her recent adventures in Italy.
               </Text>
 
               {/* Anatomy Section */}
               <View>
-                <Text className="text-black dark:text-white font-bold text-base mb-3">
+                <Text
+                  className="font-bold text-base mb-3"
+                  style={{ color: colors.text.primary }}
+                >
                   Anatomy
                 </Text>
 
                 {/* Prefix */}
                 <View className="flex-row items-center mb-2">
                   <View className="flex-row items-center w-40">
-                    <View className="bg-red-500 rounded-l-full px-3 py-1 w-[60px]">
+                    <View
+                      className="rounded-l-full px-3 py-1 w-[60px]"
+                      style={{ backgroundColor: colors.accent.red }}
+                    >
                       <Text className="text-white text-xs font-medium text-center">
                         Prefix
                       </Text>
                     </View>
-                    <Text className="ml-3 text-sm font-semibold text-black dark:text-white">
+                    <Text
+                      className="ml-3 text-sm font-semibold"
+                      style={{ color: colors.text.primary }}
+                    >
                       ad-
                     </Text>
                   </View>
-                  <Text className="flex-1 ml-8 text-sm text-gray-600 dark:text-gray-400 text-left">
+                  <Text
+                    className="flex-1 ml-8 text-sm text-left"
+                    style={{ color: colors.text.secondary }}
+                  >
                     Hướng đến
                   </Text>
                 </View>
@@ -196,16 +265,25 @@ const Flashcard = () => {
                 {/* Origin */}
                 <View className="flex-row items-center mb-2">
                   <View className="flex-row items-center w-40">
-                    <View className="bg-black rounded-l-full px-3 py-1 w-[60px]">
+                    <View
+                      className="rounded-l-full px-3 py-1 w-[60px]"
+                      style={{ backgroundColor: colors.text.primary }}
+                    >
                       <Text className="text-white text-xs font-medium text-center">
                         Origin
                       </Text>
                     </View>
-                    <Text className="ml-3 text-sm font-semibold text-black dark:text-white">
+                    <Text
+                      className="ml-3 text-sm font-semibold"
+                      style={{ color: colors.text.primary }}
+                    >
                       -vent-
                     </Text>
                   </View>
-                  <Text className="flex-1 ml-8 text-sm text-gray-600 dark:text-gray-400 text-left">
+                  <Text
+                    className="flex-1 ml-8 text-sm text-left"
+                    style={{ color: colors.text.secondary }}
+                  >
                     Đi
                   </Text>
                 </View>
@@ -213,16 +291,25 @@ const Flashcard = () => {
                 {/* Postfix */}
                 <View className="flex-row items-center">
                   <View className="flex-row items-center w-40">
-                    <View className="bg-green-500 rounded-l-full px-3 py-1 w-[60px]">
+                    <View
+                      className="rounded-l-full px-3 py-1 w-[60px]"
+                      style={{ backgroundColor: colors.accent.green }}
+                    >
                       <Text className="text-white text-xs font-medium text-center">
                         Postfix
                       </Text>
                     </View>
-                    <Text className="ml-3 text-sm font-semibold text-black dark:text-white">
+                    <Text
+                      className="ml-3 text-sm font-semibold"
+                      style={{ color: colors.text.primary }}
+                    >
                       -ure
                     </Text>
                   </View>
-                  <Text className="flex-1 ml-8 text-sm text-gray-600 dark:text-gray-400 text-left">
+                  <Text
+                    className="flex-1 ml-8 text-sm text-left"
+                    style={{ color: colors.text.secondary }}
+                  >
                     hậu tố
                   </Text>
                 </View>

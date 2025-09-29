@@ -3,14 +3,19 @@ import { useEffect } from "react";
 import { TouchableOpacity } from "react-native";
 
 import { expo } from "@/app.json";
+import { getColors } from "@/utls/colors";
 import { Text } from "@react-navigation/elements";
 import { Image } from "expo-image";
-import * as WebBrowser from "expo-web-browser";
 import { router } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
+import { useColorScheme } from "nativewind";
 
 WebBrowser.maybeCompleteAuthSession();
 
 export default function GoogleSignInButton() {
+  const { colorScheme } = useColorScheme();
+  const colors = getColors(colorScheme === "dark");
+
   function extractParamsFromUrl(url: string) {
     const parsedUrl = new URL(url);
     const hash = parsedUrl.hash.substring(1); // Remove the leading '#'
@@ -48,7 +53,7 @@ export default function GoogleSignInButton() {
     const result = await WebBrowser.openAuthSessionAsync(
       googleOAuthUrl,
       `${expo.scheme}://home`,
-      { showInRecents: true },
+      { showInRecents: true }
     ).catch((err) => {
       console.error("onSignInButtonPress - openAuthSessionAsync - error", {
         err,
@@ -104,9 +109,9 @@ export default function GoogleSignInButton() {
       style={{
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#ffffff",
+        backgroundColor: colors.background.primary,
         borderWidth: 1,
-        borderColor: "#dbdbdb",
+        borderColor: colors.border.primary,
         borderRadius: 12,
         paddingVertical: 14,
         paddingHorizontal: 62,
@@ -124,7 +129,7 @@ export default function GoogleSignInButton() {
       <Text
         style={{
           fontSize: 16,
-          color: "#000",
+          color: colors.text.primary,
           fontFamily: "Roboto-Regular", // Assuming Roboto is available; install via expo-google-fonts or similar if needed
           fontWeight: "500",
         }}

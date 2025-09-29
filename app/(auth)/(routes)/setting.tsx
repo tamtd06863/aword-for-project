@@ -1,3 +1,4 @@
+import { getColors } from "@/utls/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Switch } from "heroui-native";
@@ -8,6 +9,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const Setting = () => {
   const { toggleColorScheme, colorScheme } = useColorScheme();
+  const colors = getColors(colorScheme === "dark");
   const [isDarkMode, setIsDarkMode] = useState(colorScheme === "dark");
   const [selectedLanguage, setSelectedLanguage] = useState("English");
   const [selectedFontSize, setSelectedFontSize] = useState("Medium");
@@ -31,7 +33,11 @@ const Setting = () => {
     className?: string;
   }) => (
     <View
-      className={`bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 ${className}`}
+      className={`rounded-2xl shadow-sm border ${className}`}
+      style={{
+        backgroundColor: colors.background.secondary,
+        borderColor: colors.border.primary,
+      }}
     >
       {children}
     </View>
@@ -46,24 +52,32 @@ const Setting = () => {
   }) => (
     <Pressable
       onPress={onPress}
-      className="w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600 items-center justify-center"
+      className="w-6 h-6 rounded-full border-2 items-center justify-center"
+      style={{ borderColor: colors.border.secondary }}
     >
-      {selected && <View className="w-3 h-3 rounded-full bg-blue-600" />}
+      {selected && (
+        <View
+          className="w-3 h-3 rounded-full"
+          style={{ backgroundColor: colors.accent.blue }}
+        />
+      )}
     </Pressable>
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900">
+    <SafeAreaView
+      className="flex-1"
+      style={{ backgroundColor: colors.background.tertiary }}
+    >
       {/* Header */}
       <View className="flex-row items-center px-6 py-4">
         <Pressable className="mr-4" onPress={() => router.push("/home")}>
-          <Ionicons
-            name="arrow-back"
-            size={24}
-            color={colorScheme === "dark" ? "white" : "#374151"}
-          />
+          <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </Pressable>
-        <Text className="text-2xl font-bold text-gray-900 dark:text-white">
+        <Text
+          className="text-2xl font-bold"
+          style={{ color: colors.text.primary }}
+        >
           Setting
         </Text>
       </View>
@@ -72,7 +86,10 @@ const Setting = () => {
         {/* Dark Mode Section */}
         <SettingCard className="mb-4">
           <View className="flex-row items-center justify-between p-4">
-            <Text className="text-lg font-medium text-gray-900 dark:text-white">
+            <Text
+              className="text-lg font-medium"
+              style={{ color: colors.text.primary }}
+            >
               Dark mode
             </Text>
             <Switch isSelected={isDarkMode} onPress={handleDarkModeToggle} />
@@ -86,21 +103,33 @@ const Setting = () => {
             className="p-4"
           >
             <View className="flex-row items-center justify-between">
-              <Text className="text-lg font-medium text-gray-900 dark:text-white">
+              <Text
+                className="text-lg font-medium"
+                style={{ color: colors.text.primary }}
+              >
                 Language
               </Text>
               <Ionicons
                 name={isLanguageExpanded ? "chevron-up" : "chevron-down"}
                 size={20}
-                color={colorScheme === "dark" ? "#9CA3AF" : "#6B7280"}
+                color={colors.text.secondary}
               />
             </View>
           </Pressable>
 
           {isLanguageExpanded && (
-            <View className="px-4 pb-4 border-t border-gray-100">
+            <View
+              className="px-4 pb-4"
+              style={{
+                borderTopColor: colors.border.primary,
+                borderTopWidth: 1,
+              }}
+            >
               <View className="flex-row items-center justify-between py-3">
-                <Text className="text-base text-gray-700 dark:text-gray-300">
+                <Text
+                  className="text-base"
+                  style={{ color: colors.text.secondary }}
+                >
                   Vietnamese
                 </Text>
                 <RadioButton
@@ -109,7 +138,10 @@ const Setting = () => {
                 />
               </View>
               <View className="flex-row items-center justify-between py-3">
-                <Text className="text-base text-gray-700 dark:text-gray-300">
+                <Text
+                  className="text-base"
+                  style={{ color: colors.text.secondary }}
+                >
                   English
                 </Text>
                 <RadioButton
@@ -128,21 +160,33 @@ const Setting = () => {
             className="p-4"
           >
             <View className="flex-row items-center justify-between">
-              <Text className="text-lg font-medium text-gray-900 dark:text-white">
+              <Text
+                className="text-lg font-medium"
+                style={{ color: colors.text.primary }}
+              >
                 Font size
               </Text>
               <Ionicons
                 name={isFontSizeExpanded ? "chevron-up" : "chevron-down"}
                 size={20}
-                color={colorScheme === "dark" ? "#9CA3AF" : "#6B7280"}
+                color={colors.text.secondary}
               />
             </View>
           </Pressable>
 
           {isFontSizeExpanded && (
-            <View className="px-4 pb-4 border-t border-gray-100">
+            <View
+              className="px-4 pb-4"
+              style={{
+                borderTopColor: colors.border.primary,
+                borderTopWidth: 1,
+              }}
+            >
               <View className="flex-row items-center justify-between py-3">
-                <Text className="text-base text-gray-700 dark:text-gray-300">
+                <Text
+                  className="text-base"
+                  style={{ color: colors.text.secondary }}
+                >
                   Small
                 </Text>
                 <RadioButton
@@ -151,7 +195,10 @@ const Setting = () => {
                 />
               </View>
               <View className="flex-row items-center justify-between py-3">
-                <Text className="text-base text-gray-700 dark:text-gray-300">
+                <Text
+                  className="text-base"
+                  style={{ color: colors.text.secondary }}
+                >
                   Medium
                 </Text>
                 <RadioButton
@@ -160,7 +207,10 @@ const Setting = () => {
                 />
               </View>
               <View className="flex-row items-center justify-between py-3">
-                <Text className="text-base text-gray-700 dark:text-gray-300">
+                <Text
+                  className="text-base"
+                  style={{ color: colors.text.secondary }}
+                >
                   Big
                 </Text>
                 <RadioButton
@@ -175,13 +225,16 @@ const Setting = () => {
         {/* Notifications Section */}
         <SettingCard className="mb-4">
           <Pressable className="flex-row items-center justify-between p-4">
-            <Text className="text-lg font-medium text-gray-900 dark:text-white">
+            <Text
+              className="text-lg font-medium"
+              style={{ color: colors.text.primary }}
+            >
               Notifications
             </Text>
             <Ionicons
               name="chevron-forward"
               size={20}
-              color={colorScheme === "dark" ? "#9CA3AF" : "#6B7280"}
+              color={colors.text.secondary}
             />
           </Pressable>
         </SettingCard>

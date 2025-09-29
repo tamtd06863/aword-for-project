@@ -1,4 +1,5 @@
 import { useAuthContext } from "@/hooks/use-auth-context";
+import { getColors } from "@/utls/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import { FormField } from "heroui-native";
@@ -12,21 +13,23 @@ const LearnLayout = () => {
   const { colorScheme } = useColorScheme();
   const [searchValue, setSearchValue] = useState("");
 
+  const colors = getColors(colorScheme === "dark");
+
   return (
     <Stack
       screenOptions={{
         headerShown: true,
         headerStyle: {
-          backgroundColor: colorScheme === "dark" ? "#1E3A8A" : "#0659E7",
+          backgroundColor: colors.primary.main,
         },
-        headerTintColor: "white",
-        headerTitleStyle: { color: "white" },
+        headerTintColor: colors.text.header,
+        headerTitleStyle: { color: colors.text.header },
         headerLeft: () => (
           <TouchableOpacity
             onPress={() => router.back()}
             style={{ marginLeft: 12 }}
           >
-            <Ionicons name="arrow-back" size={22} color="white" />
+            <Ionicons name="arrow-back" size={22} color={colors.text.header} />
           </TouchableOpacity>
         ),
       }}
@@ -37,17 +40,16 @@ const LearnLayout = () => {
           header: () => (
             <View
               style={{
-                backgroundColor: colorScheme === "dark" ? "#111827" : "#F9FAFB",
-                paddingBottom: 20,
+                backgroundColor: colors.background.primary,
+                paddingTop: 50,
               }}
             >
               <View
                 style={{
-                  backgroundColor:
-                    colorScheme === "dark" ? "#1E3A8A" : "#0659E7",
+                  backgroundColor: colors.primary.main,
                   paddingHorizontal: 12,
-                  paddingTop: 100,
-                  paddingBottom: 38,
+                  paddingTop: 20,
+                  paddingBottom: 20,
                   flexDirection: "row",
                   alignItems: "center",
                   borderBottomLeftRadius: 16,
@@ -56,7 +58,11 @@ const LearnLayout = () => {
               >
                 {/* Nút back */}
                 <TouchableOpacity onPress={() => router.back()}>
-                  <Ionicons name="arrow-back" size={22} color="white" />
+                  <Ionicons
+                    name="arrow-back"
+                    size={22}
+                    color={colors.text.header}
+                  />
                 </TouchableOpacity>
 
                 {/* Ô search */}
@@ -72,16 +78,10 @@ const LearnLayout = () => {
                         style={{
                           flexDirection: "row",
                           alignItems: "center",
-                          backgroundColor:
-                            colorScheme === "dark"
-                              ? "rgba(255, 255, 255, 0.1)"
-                              : "rgba(255, 255, 255, 0.9)",
+                          backgroundColor: colors.surface.primary,
                           borderRadius: 12,
                           borderWidth: 1,
-                          borderColor:
-                            colorScheme === "dark"
-                              ? "rgba(255, 255, 255, 0.2)"
-                              : "rgba(255, 255, 255, 0.3)",
+                          borderColor: colors.border.secondary,
                           paddingHorizontal: 12,
                           paddingVertical: 12,
                         }}
@@ -89,11 +89,7 @@ const LearnLayout = () => {
                         <Ionicons
                           name="search"
                           size={18}
-                          color={
-                            colorScheme === "dark"
-                              ? "rgba(255, 255, 255, 0.7)"
-                              : "rgba(0, 0, 0, 0.6)"
-                          }
+                          color={colors.text.secondary}
                           style={{ marginRight: 8 }}
                         />
                         <TextInput
@@ -102,14 +98,10 @@ const LearnLayout = () => {
                           style={{
                             flex: 1,
                             fontSize: 16,
-                            color: colorScheme === "dark" ? "white" : "black",
+                            color: colors.text.primary,
                           }}
                           placeholder="Search here..."
-                          placeholderTextColor={
-                            colorScheme === "dark"
-                              ? "rgba(255, 255, 255, 0.6)"
-                              : "rgba(0, 0, 0, 0.5)"
-                          }
+                          placeholderTextColor={colors.text.tertiary}
                         />
                       </View>
                     </FormField.Content>

@@ -1,15 +1,15 @@
-import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { getColors } from "@/utls/colors";
+import { Ionicons } from "@expo/vector-icons";
+import { useColorScheme } from "nativewind";
+import React from "react";
+import { Pressable, Text, View } from "react-native";
 
 type WordPart = {
   text: string;
-  colorClass?: string; // e.g. 'text-red-600'
 };
 
 type AnatomyItem = {
   badgeLabel: string; // Prefix, Origin, Postfix
-  badgeColorClass: string; // e.g. 'bg-red-600'
   part: string; // ad-, -vent-, -ure
   meaning: string; // Vietnamese meaning
 };
@@ -28,22 +28,37 @@ type NewWordDetailProps = {
 };
 
 function clamp(value?: number) {
-  if (typeof value !== 'number' || Number.isNaN(value)) return 0;
+  if (typeof value !== "number" || Number.isNaN(value)) return 0;
   if (value < 0) return 0;
   if (value > 1) return 1;
   return value;
 }
 
 export default function NewWordDetail(props: NewWordDetailProps) {
+  const { colorScheme } = useColorScheme();
+  const colors = getColors(colorScheme === "dark");
+
   const progress = clamp(props.progress);
-  const continueLabel = props.continueLabel ?? 'Continue';
+  const continueLabel = props.continueLabel ?? "Continue";
 
   return (
-    <View className="flex-1 bg-white">
+    <View
+      className="flex-1"
+      style={{ backgroundColor: colors.background.primary }}
+    >
       {/* Top progress */}
       <View className="px-5 pt-6">
-        <View className="h-3 w-full bg-gray-200 rounded-full overflow-hidden">
-          <View className="h-full bg-blue-600 rounded-full" style={{ width: `${progress * 100}%` }} />
+        <View
+          className="h-3 w-full rounded-full overflow-hidden"
+          style={{ backgroundColor: colors.surface.secondary }}
+        >
+          <View
+            className="h-full rounded-full"
+            style={{
+              width: `${progress * 100}%`,
+              backgroundColor: colors.primary.main,
+            }}
+          />
         </View>
       </View>
 
@@ -51,41 +66,97 @@ export default function NewWordDetail(props: NewWordDetailProps) {
       <View className="px-5 mt-6 flex-row items-center justify-between">
         <View className="flex-row flex-wrap items-center">
           {props.wordParts.map((p, idx) => (
-            <Text key={idx} className={`text-4xl font-semibold mr-1 ${p.colorClass ?? 'text-black'}`}>{p.text}</Text>
+            <Text
+              key={idx}
+              className="text-4xl font-semibold mr-1"
+              style={{ color: colors.text.primary }}
+            >
+              {p.text}
+            </Text>
           ))}
-          <Pressable onPress={props.onSpeak} accessibilityRole="button" accessibilityLabel="Play pronunciation" className="ml-2">
-            <Ionicons name="volume-high-outline" size={24} color="#374151" />
+          <Pressable
+            onPress={props.onSpeak}
+            accessibilityRole="button"
+            accessibilityLabel="Play pronunciation"
+            className="ml-2"
+          >
+            <Ionicons
+              name="volume-high-outline"
+              size={24}
+              color={colors.text.secondary}
+            />
           </Pressable>
         </View>
-        <Text className="text-gray-700 text-xl">{props.pos}</Text>
+        <Text className="text-xl" style={{ color: colors.text.secondary }}>
+          {props.pos}
+        </Text>
       </View>
 
       {/* IPA */}
       <View className="px-5 mt-2">
-        <Text className="text-gray-700 text-xl">{props.ipa}</Text>
+        <Text className="text-xl" style={{ color: colors.text.secondary }}>
+          {props.ipa}
+        </Text>
       </View>
 
       {/* Vietnamese definition & example */}
       <View className="px-5 mt-6">
-        <Text className="text-2xl font-semibold text-black">{props.viDefinition}</Text>
+        <Text
+          className="text-2xl font-semibold"
+          style={{ color: colors.text.primary }}
+        >
+          {props.viDefinition}
+        </Text>
         {props.example ? (
-          <Text className="text-base text-gray-600 mt-3">{props.example}</Text>
+          <Text
+            className="text-base mt-3"
+            style={{ color: colors.text.secondary }}
+          >
+            {props.example}
+          </Text>
         ) : null}
       </View>
 
       {/* Anatomy */}
       <View className="px-5 mt-10">
-        <Text className="text-2xl font-bold text-black">Anatomy</Text>
+        <Text
+          className="text-2xl font-bold"
+          style={{ color: colors.text.primary }}
+        >
+          Anatomy
+        </Text>
         <View className="mt-6">
           {props.anatomy.map((item, idx) => (
             <View key={idx} className="flex-row items-center mb-4">
               <View className="flex-row items-center w-40">
-              <View className={`h-10 w-20 items-center justify-center rounded-l-full ${item.badgeColorClass}`}>
-                <Text className="text-white font-semibold">{item.badgeLabel}</Text>
+                <View
+                  className="h-10 w-20 items-center justify-center rounded-l-full"
+                  style={{
+                    backgroundColor:
+                      idx === 0
+                        ? colors.accent.red
+                        : idx === 1
+                          ? colors.accent.purple
+                          : colors.accent.green,
+                  }}
+                >
+                  <Text className="text-white font-semibold">
+                    {item.badgeLabel}
+                  </Text>
                 </View>
-                <Text className="ml-3 text-xl font-semibold text-black">{item.part}</Text>
+                <Text
+                  className="ml-3 text-xl font-semibold"
+                  style={{ color: colors.text.primary }}
+                >
+                  {item.part}
+                </Text>
               </View>
-              <Text className="flex-1 ml-16 text-lg text-gray-800 text-left">{item.meaning}</Text>
+              <Text
+                className="flex-1 ml-16 text-lg text-left"
+                style={{ color: colors.text.secondary }}
+              >
+                {item.meaning}
+              </Text>
             </View>
           ))}
         </View>
@@ -93,12 +164,19 @@ export default function NewWordDetail(props: NewWordDetailProps) {
 
       {/* Continue Button */}
       <View className="px-5 pb-8 mt-auto">
-        <Pressable onPress={props.onContinue} className="bg-blue-600 rounded-2xl items-center justify-center py-4">
-          <Text className="text-white text-base font-semibold">{continueLabel}</Text>
+        <Pressable
+          onPress={props.onContinue}
+          className="rounded-2xl items-center justify-center py-4"
+          style={{ backgroundColor: colors.primary.main }}
+        >
+          <Text
+            className="text-base font-semibold"
+            style={{ color: colors.text.button }}
+          >
+            {continueLabel}
+          </Text>
         </Pressable>
       </View>
     </View>
   );
 }
-
-

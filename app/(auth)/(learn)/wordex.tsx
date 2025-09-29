@@ -1,3 +1,4 @@
+import { getColors } from "@/utls/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useColorScheme } from "nativewind";
 import React, { useState } from "react";
@@ -64,26 +65,34 @@ const Wordex = () => {
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<string>("");
 
+  const colors = getColors(colorScheme === "dark");
+
   const filteredPrefixes = Object.keys(data).filter((prefix) =>
     prefix.toLowerCase().includes(search.toLowerCase())
   );
 
   const renderItem: ListRenderItem<WordType> = ({ item }) => (
     <View className="mt-2 pl-2">
-      <Text className="text-base font-semibold text-gray-900 dark:text-white">
+      <Text
+        className="text-base font-semibold"
+        style={{ color: colors.text.primary }}
+      >
         {item.word}
       </Text>
-      <Text className="text-sm text-gray-600 dark:text-gray-400">
+      <Text className="text-sm" style={{ color: colors.text.secondary }}>
         {item.phonetic}
       </Text>
-      <Text className="text-xs text-gray-500 dark:text-gray-500">
+      <Text className="text-xs" style={{ color: colors.text.secondary }}>
         {item.meaning}
       </Text>
     </View>
   );
 
   return (
-    <View className="flex-1 bg-white dark:bg-gray-900">
+    <View
+      className="flex-1"
+      style={{ backgroundColor: colors.background.primary }}
+    >
       {/* Thanh Search */}
       {/*<View className="flex-row items-center bg-blue-600 px-3 py-2">*/}
       {/*    <Ionicons name="arrow-back" size={24} color="#fff"/>*/}
@@ -101,19 +110,23 @@ const Wordex = () => {
       {filteredPrefixes.map((prefix) => (
         <View
           key={prefix}
-          className="m-3 rounded-xl bg-gray-100 dark:bg-gray-800 p-3 shadow"
+          className="m-3 rounded-xl p-3 shadow"
+          style={{ backgroundColor: colors.background.secondary }}
         >
           <TouchableOpacity
             className="flex-row justify-between items-center"
             onPress={() => setExpanded(expanded === prefix ? "" : prefix)}
           >
-            <Text className="text-lg font-bold text-gray-900 dark:text-white">
+            <Text
+              className="text-lg font-bold"
+              style={{ color: colors.text.primary }}
+            >
               {prefix}
             </Text>
             <Ionicons
               name={expanded === prefix ? "remove" : "add"}
               size={22}
-              color={colorScheme === "dark" ? "white" : "#000"}
+              color={colors.text.primary}
             />
           </TouchableOpacity>
 
