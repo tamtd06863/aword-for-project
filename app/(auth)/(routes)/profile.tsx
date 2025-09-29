@@ -8,7 +8,7 @@ import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Image, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-interface UserStats {
+interface ProfileStats {
   streaks: number;
   totalExp: number;
   currentLeague: string;
@@ -20,7 +20,7 @@ const Profile = () => {
   const colors = getColors(colorScheme === "dark");
   const user = useAppSelector((state) => state.auth.auth);
 
-  const [stats, setStats] = useState<UserStats>({
+  const [stats, setStats] = useState<ProfileStats>({
     streaks: 0,
     totalExp: 0,
     currentLeague: "Bronze",
@@ -32,7 +32,7 @@ const Profile = () => {
     await supabase.auth.signOut();
   };
 
-  const fetchUserStats = async () => {
+  const fetchUserStatsData = async () => {
     try {
       setLoading(true);
 
@@ -45,17 +45,7 @@ const Profile = () => {
       });
 
       // TODO: Uncomment when user_stats table is created in Supabase
-      // const { data: userStats, error } = await supabase
-      //   .from("user_stats")
-      //   .select("*")
-      //   .eq("user_id", user.userId)
-      //   .single();
-
-      // if (error && error.code !== "PGRST116") {
-      //   console.error("Error fetching user stats:", error);
-      //   return;
-      // }
-
+      // const userStats = await fetchUserStats(user.userId);
       // if (userStats) {
       //   setStats({
       //     streaks: userStats.streaks || 0,
@@ -73,7 +63,7 @@ const Profile = () => {
 
   useEffect(() => {
     if (user.userId) {
-      fetchUserStats();
+      fetchUserStatsData();
     }
   }, [user.userId]);
 
