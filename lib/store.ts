@@ -1,5 +1,5 @@
-import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { authSlice } from "@/lib/features/auth/authSlice";
+import { combineReducers, configureStore } from "@reduxjs/toolkit";
 
 export const makeStore = () => {
   return configureStore({

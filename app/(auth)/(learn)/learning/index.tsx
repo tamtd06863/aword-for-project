@@ -13,7 +13,7 @@ const Index = () => {
   const [checked, setChecked] = React.useState(false);
 
   return (
-    <View className="flex-1">
+    <View className="flex-1 bg-white dark:bg-gray-900">
       <FlowPager index={step}>
         <NewWord
           word="adventure"

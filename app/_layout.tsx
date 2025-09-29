@@ -1,39 +1,39 @@
-import { Stack } from "expo-router";
-import "./global.css";
-import { vars, useColorScheme } from "nativewind";
-import { View } from "react-native";
-import { Provider } from "react-redux";
-import { makeStore, AppStore } from "@/lib/store";
-import React from "react";
-import AuthProvider from "@/providers/auth-provider";
 import { SplashScreenController } from "@/components/splash-screen-controller";
+import { AppStore, makeStore } from "@/lib/store";
+import AuthProvider from "@/providers/auth-provider";
+import { Stack } from "expo-router";
+import { HeroUINativeProvider } from "heroui-native";
+import { useColorScheme } from "nativewind";
+import React from "react";
+import { Provider } from "react-redux";
+import "./global.css";
 
-const themes = {
-  blue: {
-    light: vars({
-      "--color-primary": "6 89 231",
-    }),
-    dark: vars({
-      "--color-primary": "96 165 250",
-    }),
-  },
-};
+// const themes = {
+//   blue: {
+//     light: vars({
+//       "--color-primary": "6 89 231",
+//     }),
+//     dark: vars({
+//       "--color-primary": "96 165 250",
+//     }),
+//   },
+// };
 
-function Theme(props: { children: React.ReactNode }) {
-  const { colorScheme } = useColorScheme();
-  return (
-    <View
-      style={
-        colorScheme === "dark"
-          ? themes["blue"]["dark"]
-          : themes["blue"]["light"]
-      }
-      className={"flex-1 bg-primary"}
-    >
-      {props.children}
-    </View>
-  );
-}
+// function Theme(props: { children: React.ReactNode }) {
+//   const { colorScheme } = useColorScheme();
+//   return (
+//     <View
+//       style={
+//         colorScheme === "dark"
+//           ? themes["blue"]["dark"]
+//           : themes["blue"]["light"]
+//       }
+//       className={"flex-1 bg-primary"}
+//     >
+//       {props.children}
+//     </View>
+//   );
+// }
 
 function StoreProvider({ children }: { children: React.ReactNode }) {
   const storeRef = React.useRef<AppStore | null>(null);
@@ -45,17 +45,27 @@ function StoreProvider({ children }: { children: React.ReactNode }) {
   return <Provider store={storeRef.current}>{children}</Provider>;
 }
 
+function HeroUIProvider({ children }: { children: React.ReactNode }) {
+  const { colorScheme } = useColorScheme();
+
+  return (
+    <HeroUINativeProvider config={{ colorScheme: colorScheme || "light" }}>
+      {children}
+    </HeroUINativeProvider>
+  );
+}
+
 export default function RootLayout() {
   return (
-    <StoreProvider>
-      <Theme>
+    <HeroUIProvider>
+      <StoreProvider>
         <AuthProvider>
           <SplashScreenController />
           <Stack>
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
           </Stack>
         </AuthProvider>
-      </Theme>
-    </StoreProvider>
+      </StoreProvider>
+    </HeroUIProvider>
   );
 }

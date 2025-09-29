@@ -1,9 +1,9 @@
 import { AuthContext } from "@/hooks/use-auth-context";
+import { clearAuth, setAuth } from "@/lib/features/auth/authSlice";
+import { useAppDispatch } from "@/lib/hooks";
 import { supabase } from "@/lib/supabase";
 import type { Session } from "@supabase/supabase-js";
 import { PropsWithChildren, useEffect, useState } from "react";
-import { clearAuth, setAuth } from "@/lib/features/auth/authSlice";
-import { useAppDispatch } from "@/lib/hooks";
 
 export default function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | undefined | null>();
@@ -44,7 +44,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
               email: session.user.email,
               name: session.user.user_metadata.full_name,
               avatar_url: session.user.user_metadata.avatar_url,
-            }),
+            })
           );
         }
       } else if (event === "SIGNED_IN") {
@@ -55,7 +55,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
               email: session.user.email,
               name: session.user.user_metadata.full_name,
               avatar_url: session.user.user_metadata.avatar_url,
-            }),
+            })
           );
         }
         // handle sign in event

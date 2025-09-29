@@ -1,9 +1,6 @@
-import React from "react";
-import { Stack } from "expo-router";
-import { useAppDispatch } from "@/lib/hooks";
-import { supabase } from "@/lib/supabase";
-import { clearAuth, setAuth } from "@/lib/features/auth/authSlice";
 import { useAuthContext } from "@/hooks/use-auth-context";
+import { Stack } from "expo-router";
+import React from "react";
 
 const MainLayout = () => {
   const { session } = useAuthContext();
@@ -16,7 +13,6 @@ const MainLayout = () => {
       <Stack.Protected guard={!!session}>
         <Stack.Screen name="(routes)" options={{ headerShown: false }} />
       </Stack.Protected>
-
       <Stack.Screen name="(learn)" options={{ headerShown: false }} />
     </Stack>
   );

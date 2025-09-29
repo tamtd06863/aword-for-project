@@ -1,26 +1,32 @@
+import heroUINativePlugin from "heroui-native/tailwind-plugin";
+
 /** @type {import("tailwindcss").Config} */
 module.exports = {
-  // NOTE: Update this to include the paths to all files that contain Nativewind classes.
   content: [
-    "./App.tsx",
     "./app/**/*.{js,jsx,ts,tsx}",
     "./components/**/*.{js,jsx,ts,tsx}",
+    "./node_modules/heroui-native/lib/**/*.{js,ts,jsx,tsx}",
   ],
   presets: [require("nativewind/preset")],
   theme: {
     extend: {
       colors: {
-        primary: "rgb(var(--color-primary) / <alpha-value>)",
+        primary: {
+          DEFAULT: "#0659E7",
+          50: "#EFF6FF",
+          100: "#DBEAFE",
+          200: "#BFDBFE",
+          300: "#93C5FD",
+          400: "#60A5FA",
+          500: "#0659E7",
+          600: "#1D4ED8",
+          700: "#1E40AF",
+          800: "#1E3A8A",
+          900: "#1E3A8A",
+          950: "#172554",
+        },
       },
     },
   },
-  plugins: [
-    // Set a default value on the `:root` element
-    ({ addBase }) =>
-      addBase({
-        ":root": {
-          "--color-primary": "6 89 231",
-        },
-      }),
-  ],
+  plugins: [heroUINativePlugin],
 };
