@@ -1,6 +1,6 @@
-import { SplashScreenController } from "@/components/splash-screen-controller";
+import { SplashScreenController } from "@/components/SplashScreenController";
 import { AppStore, makeStore } from "@/lib/store";
-import AuthProvider from "@/providers/auth-provider";
+import AuthProvider from "@/providers/AuthProvider";
 import { Stack } from "expo-router";
 import { HeroUINativeProvider } from "heroui-native";
 import { useColorScheme } from "nativewind";

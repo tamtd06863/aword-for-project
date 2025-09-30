@@ -1,4 +1,4 @@
-import { useAuthContext } from "@/hooks/use-auth-context";
+import { useAuthContext } from "@/hooks/AuthContext";
 import { getColors } from "@/utls/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";

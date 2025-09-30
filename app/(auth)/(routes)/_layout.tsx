@@ -1,6 +1,5 @@
-import React from "react";
-import { View } from "react-native";
 import { Tabs } from "expo-router";
+import React from "react";
 
 const RoutesLayout = () => {
   return (

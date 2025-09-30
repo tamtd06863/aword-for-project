@@ -1,4 +1,4 @@
-import { AuthContext } from "@/hooks/use-auth-context";
+import { AuthContext } from "@/hooks/AuthContext";
 import { clearAuth, setAuth } from "@/lib/features/auth/authSlice";
 import { useAppDispatch } from "@/lib/hooks";
 import { supabase } from "@/lib/supabase";
