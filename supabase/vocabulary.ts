@@ -124,3 +124,80 @@ export const searchVocabulary = async (
     return [];
   }
 };
+
+export const getTotalVocabularyCount = async (): Promise<number> => {
+  try {
+    const { count, error } = await supabase
+      .from("vocabulary")
+      .select("*", { count: "exact", head: true });
+
+    if (error) {
+      console.error("Error fetching vocabulary count:", error);
+      return 0;
+    }
+
+    return count || 0;
+  } catch (error) {
+    console.error("Error fetching vocabulary count:", error);
+    return 0;
+  }
+};
+
+export const fetchVocabularyBatch = async (
+  offset: number = 0,
+  limit: number = 20
+): Promise<Vocabulary[]> => {
+  try {
+    const { data, error } = await supabase
+      .from("vocabulary")
+      .select("*")
+      .range(offset, offset + limit - 1)
+      .order("id");
+
+    if (error) {
+      console.error("Error fetching vocabulary batch:", error);
+      return [];
+    }
+
+    return data as Vocabulary[];
+  } catch (error) {
+    console.error("Error fetching vocabulary batch:", error);
+    return [];
+  }
+};
+
+export const fetchRandomVocabularyBatch = async (
+  limit: number = 20
+): Promise<Vocabulary[]> => {
+  try {
+    // First, get the count of vocabulary items
+    const { count, error: countError } = await supabase
+      .from("vocabulary")
+      .select("*", { count: "exact", head: true });
+
+    if (countError || !count || count === 0) {
+      console.error("Error fetching vocabulary count:", countError);
+      return [];
+    }
+
+    // Generate random offset ensuring we don't go out of bounds
+    const maxOffset = Math.max(0, count - limit);
+    const randomOffset = Math.floor(Math.random() * (maxOffset + 1));
+
+    // Fetch vocabulary with random offset
+    const { data, error } = await supabase
+      .from("vocabulary")
+      .select("*")
+      .range(randomOffset, randomOffset + limit - 1);
+
+    if (error) {
+      console.error("Error fetching random vocabulary batch:", error);
+      return [];
+    }
+
+    return data as Vocabulary[];
+  } catch (error) {
+    console.error("Error fetching random vocabulary batch:", error);
+    return [];
+  }
+};

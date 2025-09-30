@@ -59,7 +59,6 @@ export default function AuthProvider({ children }: PropsWithChildren) {
           );
         }
         // handle sign in event
-        console.log(event, session);
       } else if (event === "SIGNED_OUT") {
         // handle sign out event
         dispatch(clearAuth());

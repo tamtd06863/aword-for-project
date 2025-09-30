@@ -1,7 +1,8 @@
 import { getColors } from "@/utls/colors";
 import { useColorScheme } from "nativewind";
 import React from "react";
-import { Pressable, SafeAreaView, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type NewWordProps = {
   word: string;
