@@ -3,8 +3,8 @@ import { getColors } from "@/utls/colors";
 import { useColorScheme } from "nativewind";
 import React, { useState } from "react";
 import { View } from "react-native";
-import FlashcardNormal from "./flashcard-normal";
-import FlashcardSorting from "./flashcard-sorting";
+import FlashcardNormal from "../../../components/flashcard-normal";
+import FlashcardSorting from "../../../components/flashcard-sorting";
 
 const Flashcard = () => {
   const { colorScheme } = useColorScheme();
