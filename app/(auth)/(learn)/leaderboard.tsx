@@ -28,7 +28,9 @@ const Leaderboard = () => {
                 key={user.id}
                 className={"w-full flex flex-row gap-2 items-center"}
               >
-                <Text className={"font-bold"}>{index + 1}</Text>
+                <Text className={"font-bold text-gray-900 dark:text-white"}>
+                  {index + 1}
+                </Text>
                 <ProfileCard
                   key={user.id}
                   id={user.id.toString()}
@@ -45,7 +47,7 @@ const Leaderboard = () => {
             }
           >
             <Foundation name="arrow-up" size={28} color="#31C75E" />
-            <Text className={"text-[#31C75E] font-bold"}>Promotion group</Text>
+            <Text className={"text-[#31C75E] font-bold "}>Promotion group</Text>
             <Foundation name="arrow-up" size={28} color="#31C75E" />
           </View>
 
@@ -56,7 +58,7 @@ const Leaderboard = () => {
                 key={user.id}
                 className={"w-full flex flex-row gap-2 items-center"}
               >
-                <Text className={"font-bold"}>
+                <Text className={"font-bold text-gray-900 dark:text-white"}>
                   {index + leaderboardData.promoted.length + 1}
                 </Text>
                 <ProfileCard
@@ -86,7 +88,7 @@ const Leaderboard = () => {
                 key={user.id}
                 className={"w-full flex flex-row gap-2 items-center"}
               >
-                <Text className={"font-bold"}>
+                <Text className={"font-bold text-gray-900 dark:text-white"}>
                   {index +
                     leaderboardData.promoted.length +
                     leaderboardData.regular.length +
