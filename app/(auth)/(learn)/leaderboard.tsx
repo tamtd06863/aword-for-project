@@ -135,7 +135,7 @@ const Ranks = () => {
       >
         <View className={"px-5 flex flex-row gap-4"}>
           {ranks.map((rank) => (
-            <View key={rank.id} className="flex h-fit bg-amber-50 items-center">
+            <View key={rank.id} className="flex h-fit items-center">
               <Image source={rank.image} style={{ width: 72, height: 72 }} />
             </View>
           ))}
