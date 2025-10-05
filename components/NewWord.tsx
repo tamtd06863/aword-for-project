@@ -2,7 +2,6 @@ import { getColors } from "@/utls/colors";
 import { useColorScheme } from "nativewind";
 import React from "react";
 import { Pressable, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 type NewWordProps = {
   word: string;
@@ -25,7 +24,7 @@ export default function NewWord(props: NewWordProps) {
   const label = props.continueLabel ?? "Continue";
 
   return (
-    <SafeAreaView
+    <View
       className="flex-1"
       style={{ backgroundColor: colors.background.primary }}
     >
@@ -77,6 +76,6 @@ export default function NewWord(props: NewWordProps) {
           </Text>
         </Pressable>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
