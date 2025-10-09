@@ -7,14 +7,89 @@ import { getColors } from "@/utls/colors";
 import { router } from "expo-router";
 import { useColorScheme } from "nativewind";
 import React from "react";
-import { View } from "react-native";
+import { ActivityIndicator, View } from "react-native";
+import { useGetQuestionsQuery } from "@/lib/features/learn/learnApi";
 
 const Index = () => {
   const { colorScheme } = useColorScheme();
   const colors = getColors(colorScheme === "dark");
   const [step, setStep] = React.useState(0);
-  const [selected, setSelected] = React.useState<number | null>(null);
-  const [checked, setChecked] = React.useState(false);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = React.useState(0);
+  const [selected, setSelected] = React.useState<(number | null)[]>([]);
+  const [checked, setChecked] = React.useState<boolean[]>([]);
+  const { data: questionsData, isLoading: isGettingQuestions } =
+    useGetQuestionsQuery(undefined, {
+      refetchOnMountOrArgChange: true,
+    });
+
+  React.useEffect(() => {
+    if (questionsData?.questions) {
+      setSelected(Array(questionsData.questions.length).fill(null));
+      setChecked(Array(questionsData.questions.length).fill(false));
+    }
+  }, [questionsData]);
+
+  if (isGettingQuestions) {
+    return (
+      <View
+        className="flex-1 justify-center items-center"
+        style={{ backgroundColor: colors.background.primary }}
+      >
+        <ActivityIndicator size="large" color={colors.primary.main} />
+      </View>
+    );
+  }
+
+  // Render only the current question
+  const question = questionsData.questions[currentQuestionIndex];
+  let options: string[] = [];
+  let correctIndex = 0;
+  if (
+    question.type === "multiple_choice" &&
+    Array.isArray(question.answer_blocks)
+  ) {
+    options = question.answer_blocks;
+    correctIndex = options.findIndex((opt) => opt === question.correct_answer);
+  } else if (
+    question.type === "fill_in_blank" &&
+    Array.isArray(question.answer_blocks)
+  ) {
+    options = question.answer_blocks;
+    correctIndex = options.findIndex((opt) => opt === question.correct_answer);
+  }
+
+  // Calculate total steps: each word has 2 steps (NewWord + NewWordDetail), then quiz, then result
+  const totalWordSteps = questionsData?.newWords?.length
+    ? questionsData.newWords.length * 2
+    : 0;
+
+  // Helper to get word parts for NewWordDetail
+  const getWordParts = (word) => [
+    { text: word.prefix },
+    { text: "·" },
+    { text: word.infix },
+    { text: "·" },
+    { text: word.postfix },
+  ];
+
+  // Helper to get anatomy for NewWordDetail
+  const getAnatomy = (word) => [
+    {
+      badgeLabel: "Prefix",
+      part: word.prefix,
+      meaning: word.prefix_meaning,
+    },
+    {
+      badgeLabel: "Origin",
+      part: word.infix,
+      meaning: word.infix_meaning,
+    },
+    {
+      badgeLabel: "Postfix",
+      part: word.postfix,
+      meaning: word.postfix_meaning,
+    },
+  ];
 
   return (
     <View
@@ -22,73 +97,68 @@ const Index = () => {
       style={{ backgroundColor: colors.background.primary }}
     >
       <FlowPager index={step}>
-        <NewWord
-          word="adventure"
-          progress={0.15}
-          onContinue={() => setStep(1)}
-        />
+        {/* Dynamically render NewWord and NewWordDetail for each new word */}
+        {questionsData?.newWords?.map((word, idx) => [
+          <NewWord
+            key={`newword-${word.id}`}
+            word={word.word}
+            progress={0.15 + idx * 0.15}
+            onContinue={() => setStep(idx * 2 + 1)}
+          />,
+          <NewWordDetail
+            key={`newworddetail-${word.id}`}
+            progress={0.3 + idx * 0.15}
+            wordParts={getWordParts(word)}
+            pos={word.vocab_senses[0]?.pos || ""}
+            ipa={word.phonetic}
+            viDefinition={word.vocab_senses[0]?.definition || ""}
+            example={word.vocab_senses[0]?.word || ""}
+            anatomy={getAnatomy(word)}
+            onContinue={() => setStep(idx * 2 + 2)}
+          />,
+        ])}
 
-        <NewWordDetail
-          progress={0.3}
-          wordParts={[
-            { text: "ad" },
-            { text: "·" },
-            { text: "vent" },
-            { text: "·" },
-            { text: "ure" },
-          ]}
-          pos="noun"
-          ipa="/ədˈvɛn(t)SHər/"
-          viDefinition="Chuyến phiêu lưu, mạo hiểm"
-          example="Her recent adventures in Italy"
-          anatomy={[
-            {
-              badgeLabel: "Prefix",
-              part: "ad-",
-              meaning: "Hướng đến",
-            },
-            {
-              badgeLabel: "Origin",
-              part: "-vent-",
-              meaning: "Đi",
-            },
-            {
-              badgeLabel: "Postfix",
-              part: "-ure",
-              meaning: "hậu tố",
-            },
-          ]}
-          onContinue={() => setStep(2)}
-        />
-
+        {/* Quiz step: after all words */}
         <QuizFourOptions
           progress={0.45}
-          title="Nghĩa của tiền tố"
-          prompt="ad-"
+          title={question.question}
+          prompt={question.question}
           promptColorClass="text-red-600"
-          options={[
-            "A. phù hợp, thích hợp",
-            "B. thẳng đến",
-            "C. hướng đến",
-            "D. hấp dẫn, thu hút",
-          ]}
-          selectedIndex={selected}
+          options={options}
+          selectedIndex={selected[currentQuestionIndex]}
           onSelect={(i) => {
-            setSelected(i);
-            if (checked) setChecked(false);
+            const newSelected = [...selected];
+            newSelected[currentQuestionIndex] = i;
+            setSelected(newSelected);
+            if (checked[currentQuestionIndex]) {
+              const newChecked = [...checked];
+              newChecked[currentQuestionIndex] = false;
+              setChecked(newChecked);
+            }
           }}
-          correctIndex={2}
-          checked={checked}
+          correctIndex={correctIndex}
+          checked={checked[currentQuestionIndex]}
           onCheck={() => {
-            if (!checked) setChecked(true);
-            else setStep(3);
+            if (!checked[currentQuestionIndex]) {
+              const newChecked = [...checked];
+              newChecked[currentQuestionIndex] = true;
+              setChecked(newChecked);
+            } else {
+              // Move to next question or show results
+              if (currentQuestionIndex < questionsData.questions.length - 1) {
+                setCurrentQuestionIndex(currentQuestionIndex + 1);
+              } else {
+                setStep(totalWordSteps + 1); // Show results after all words and quiz
+              }
+            }
           }}
           checkLabel="Check"
           continueLabel="Continue"
           correctMessage="Chính xác"
-          incorrectMessage="Nghĩa của tiền tố ad- là: hướng đến"
+          incorrectMessage={`Đáp án đúng là: ${question.correct_answer}`}
         />
 
+        {/* Result step: after quiz */}
         <QuizResult
           stats={[
             {
@@ -107,7 +177,7 @@ const Index = () => {
               text: "40 exp",
             },
           ]}
-          onContinue={() => router.replace("/home")}
+          onContinue={() => router.back()}
         />
       </FlowPager>
     </View>

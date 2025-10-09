@@ -34,7 +34,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      // console.log("Auth state changed:", { event: event, session });
+      console.log("Auth state changed:", { event: event, session });
       if (event === "INITIAL_SESSION") {
         // handle initial session
         if (session && session.user && session.user.email) {
@@ -44,7 +44,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
               email: session.user.email,
               name: session.user.user_metadata.full_name,
               avatar_url: session.user.user_metadata.avatar_url,
-            })
+            }),
           );
         }
       } else if (event === "SIGNED_IN") {
@@ -55,7 +55,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
               email: session.user.email,
               name: session.user.user_metadata.full_name,
               avatar_url: session.user.user_metadata.avatar_url,
-            })
+            }),
           );
         }
         // handle sign in event

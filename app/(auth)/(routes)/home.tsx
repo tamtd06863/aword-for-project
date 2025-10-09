@@ -7,6 +7,7 @@ import { useColorScheme } from "nativewind";
 import React, { useEffect, useRef } from "react";
 import { Animated, Image, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import SignOutButton from "@/components/SignOutButton";
 
 const Home = () => {
   const flameAnimation = useRef<LottieView>(null);
@@ -33,7 +34,7 @@ const Home = () => {
             duration: 2000,
             useNativeDriver: false,
           }),
-        ])
+        ]),
       ).start();
     };
     animateGradient();
@@ -103,6 +104,7 @@ const Home = () => {
         </Animated.Text>
       </View>
 
+      <SignOutButton></SignOutButton>
       {/* Title */}
       <Text className="text-5xl font-semibold text-gray-600 dark:text-gray-300 my-8 text-right">
         30 words
