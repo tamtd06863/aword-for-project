@@ -7,7 +7,7 @@ import { getColors } from "@/utls/colors";
 import { router } from "expo-router";
 import { useColorScheme } from "nativewind";
 import React from "react";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
 import { useGetQuestionsQuery } from "@/lib/features/learn/learnApi";
 
 const Index = () => {
@@ -36,6 +36,19 @@ const Index = () => {
         style={{ backgroundColor: colors.background.primary }}
       >
         <ActivityIndicator size="large" color={colors.primary.main} />
+      </View>
+    );
+  }
+
+  if (!questionsData) {
+    return (
+      <View
+        className="flex-1 justify-center items-center"
+        style={{ backgroundColor: colors.background.primary }}
+      >
+        <Text style={{ color: colors.text.primary }}>
+          Failed to load questions. Please try again later.
+        </Text>
       </View>
     );
   }
@@ -148,6 +161,7 @@ const Index = () => {
               if (currentQuestionIndex < questionsData.questions.length - 1) {
                 setCurrentQuestionIndex(currentQuestionIndex + 1);
               } else {
+                console.log("All questions done, show results");
                 setStep(totalWordSteps + 1); // Show results after all words and quiz
               }
             }
