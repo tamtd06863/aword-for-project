@@ -2,6 +2,7 @@ import { authSlice } from "@/lib/features/auth/authSlice";
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { learnApi } from "@/lib/features/learn/learnApi";
 import { vocabApi } from "@/lib/features/vocab/vocabApi";
+import { searchSlice } from "@/lib/features/search/searchSlice";
 
 export const makeStore = () => {
   return configureStore({
@@ -13,6 +14,7 @@ export const makeStore = () => {
 
 const rootReducer = combineReducers({
   auth: authSlice.reducer,
+  search: searchSlice.reducer,
   [learnApi.reducerPath]: learnApi.reducer,
   [vocabApi.reducerPath]: vocabApi.reducer,
 });

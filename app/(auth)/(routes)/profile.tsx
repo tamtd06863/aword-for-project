@@ -5,8 +5,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useColorScheme } from "nativewind";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Image, Pressable, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  Text,
+  View,
+  Modal,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import SignOutButton from "@/components/SignOutButton";
 
 interface ProfileStats {
   streaks: number;
@@ -18,6 +26,7 @@ interface ProfileStats {
 const Profile = () => {
   const { colorScheme } = useColorScheme();
   const colors = getColors(colorScheme === "dark");
+  const [modalVisible, setModalVisible] = useState(false);
   const user = useAppSelector((state) => state.auth.auth);
 
   const [stats, setStats] = useState<ProfileStats>({
@@ -107,6 +116,30 @@ const Profile = () => {
       className="flex-1"
       style={{ backgroundColor: colors.background.primary }}
     >
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => {
+          setModalVisible(!modalVisible);
+        }}
+      >
+        <Pressable
+          className={"flex-1 justify-center items-center"}
+          onPress={() => setModalVisible(false)} // 👉 click ra ngoài sẽ đóng modal
+        >
+          <Pressable
+            className={
+              "h-40 dark:bg-dark bg bg-white mt-auto p-6 border-t border-gray-300 w-full"
+            }
+            onPress={(e) => e.stopPropagation()} // 👉 chặn click bên trong modal làm đóng
+          >
+            <View className={"w-full items-end"}></View>
+            <SignOutButton />
+          </Pressable>
+        </Pressable>
+      </Modal>
+
       {/* Header with Orange Background */}
       <View
         className="pt-4 pb-20 px-6"
@@ -128,7 +161,7 @@ const Profile = () => {
               Profile
             </Text>
           </View>
-          <Pressable>
+          <Pressable onPress={() => setModalVisible(true)}>
             <Ionicons
               name="ellipsis-vertical"
               size={24}

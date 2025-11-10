@@ -6,6 +6,8 @@ import { FormField } from "heroui-native";
 import { useColorScheme } from "nativewind";
 import React, { useState } from "react";
 import { TextInput, TouchableOpacity, View } from "react-native";
+import { setQuery } from "@/lib/features/search/searchSlice";
+import { useAppDispatch } from "@/lib/hooks";
 
 const LearnLayout = () => {
   const router = useRouter();
@@ -14,6 +16,13 @@ const LearnLayout = () => {
   const [searchValue, setSearchValue] = useState("");
 
   const colors = getColors(colorScheme === "dark");
+  const dispatch = useAppDispatch();
+
+  const handleSearch = (query: string) => {
+    if (query.trim().length > 0) {
+      dispatch(setQuery(query));
+    }
+  };
 
   return (
     <Stack
@@ -95,6 +104,8 @@ const LearnLayout = () => {
                         <TextInput
                           value={searchValue}
                           onChangeText={setSearchValue}
+                          onSubmitEditing={() => handleSearch(searchValue)}
+                          returnKeyType="search"
                           style={{
                             flex: 1,
                             fontSize: 16,

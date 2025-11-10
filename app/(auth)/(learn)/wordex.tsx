@@ -13,16 +13,19 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useAppSelector } from "@/lib/hooks";
 
 const Wordex = () => {
   const { colorScheme } = useColorScheme();
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<string>("");
-  const [vocabulary, setVocabulary] = useState<Vocabulary[]>([]);
-  const [groupedData, setGroupedData] = useState<Record<string, Vocabulary[]>>(
-    {}
-  );
+  // groupedData is a map: key -> { name: string, words: any[] }
+  const [groupedData, setGroupedData] = useState<
+    Record<string, { name: string; words: any[] }>
+  >({});
   const [loading, setLoading] = useState(true);
+
+  const searchQuery = useAppSelector((state) => state.search.query);
 
   const colors = getColors(colorScheme === "dark");
 
@@ -33,20 +36,7 @@ const Wordex = () => {
   const loadVocabulary = async () => {
     try {
       setLoading(true);
-      const data = await fetchAllVocabulary();
-      setVocabulary(data);
-
-      // Group by prefix
-      const grouped: Record<string, Vocabulary[]> = {};
-      data.forEach((item) => {
-        if (item.prefix) {
-          const key = item.prefix;
-          if (!grouped[key]) {
-            grouped[key] = [];
-          }
-          grouped[key].push(item);
-        }
-      });
+      const grouped = await fetchAllVocabulary();
 
       setGroupedData(grouped);
     } catch (error) {
@@ -56,9 +46,15 @@ const Wordex = () => {
     }
   };
 
-  const filteredPrefixes = Object.keys(groupedData).filter((prefix) =>
-    prefix.toLowerCase().includes(search.toLowerCase())
-  );
+  // Filter group keys by group name or key (search)
+  const filteredGroupKeys = Object.keys(groupedData).filter((key) => {
+    const group = groupedData[key];
+    const name = group?.name ?? key;
+    return (
+      name.toLowerCase().includes(search.toLowerCase()) ||
+      key.toLowerCase().includes(search.toLowerCase())
+    );
+  });
 
   const renderItem: ListRenderItem<Vocabulary> = ({ item }) => (
     <View
@@ -72,7 +68,7 @@ const Wordex = () => {
         {item.word}
       </Text>
       <Text className="text-lg mb-2" style={{ color: colors.text.secondary }}>
-        {item.ipa}
+        {item.phonetic}
       </Text>
       <Text className="text-lg mb-2" style={{ color: colors.text.primary }}>
         {item.definition_vi}
@@ -218,59 +214,64 @@ const Wordex = () => {
       {/*    <Ionicons name="search" size={22} color="#fff"/>*/}
       {/*</View>*/}
 
-      {/* Danh sách Prefix */}
+      {/* Danh sách nhóm (grouped by root/sub-root) */}
       <FlatList
-        data={filteredPrefixes}
-        keyExtractor={(prefix) => prefix}
-        renderItem={({ item: prefix }) => (
-          <View
-            className="m-3 rounded-xl p-3 shadow"
-            style={{ backgroundColor: colors.background.secondary }}
-          >
-            <TouchableOpacity
-              className="flex-row justify-between items-center"
-              onPress={() => setExpanded(expanded === prefix ? "" : prefix)}
+        data={filteredGroupKeys}
+        keyExtractor={(key) => key}
+        renderItem={({ item: groupKey }) => {
+          const group = groupedData[groupKey] ?? { name: groupKey, words: [] };
+          return (
+            <View
+              className="m-3 rounded-xl p-3 shadow"
+              style={{ backgroundColor: colors.background.secondary }}
             >
-              <View className="flex-1">
-                <Text
-                  className="text-3xl font-bold"
-                  style={{ color: colors.text.primary }}
-                >
-                  {prefix}
-                </Text>
-                <Text
-                  className="text-base mt-1"
-                  style={{ color: colors.text.secondary }}
-                >
-                  {groupedData[prefix]?.length || 0} words
-                </Text>
-              </View>
-              <Ionicons
-                name={expanded === prefix ? "chevron-up" : "chevron-down"}
-                size={30}
-                color={colors.text.primary}
-              />
-            </TouchableOpacity>
-
-            {expanded === prefix && (
-              <View className="mt-3">
-                <FlatList
-                  data={groupedData[prefix]}
-                  keyExtractor={(item) => item.id}
-                  renderItem={renderItem}
-                  scrollEnabled={false}
+              <TouchableOpacity
+                className="flex-row justify-between items-center"
+                onPress={() =>
+                  setExpanded(expanded === groupKey ? "" : groupKey)
+                }
+              >
+                <View className="flex-1">
+                  <Text
+                    className="text-3xl font-bold"
+                    style={{ color: colors.text.primary }}
+                  >
+                    {group.name}
+                  </Text>
+                  <Text
+                    className="text-base mt-1"
+                    style={{ color: colors.text.secondary }}
+                  >
+                    {group.words?.length || 0} words
+                  </Text>
+                </View>
+                <Ionicons
+                  name={expanded === groupKey ? "chevron-up" : "chevron-down"}
+                  size={30}
+                  color={colors.text.primary}
                 />
-              </View>
-            )}
-          </View>
-        )}
+              </TouchableOpacity>
+
+              {expanded === groupKey && (
+                <View className="mt-3">
+                  <FlatList
+                    data={group.words}
+                    keyExtractor={(item) => item.id}
+                    renderItem={renderItem}
+                    scrollEnabled={false}
+                  />
+                </View>
+              )}
+            </View>
+          );
+        }}
         ListEmptyComponent={
           <View className="flex-1 justify-center items-center p-6">
             <Text
               className="text-base"
               style={{ color: colors.text.secondary }}
             >
-              No vocabulary found with prefix.
+              No vocabulary found.
             </Text>
           </View>
         }

@@ -96,17 +96,19 @@ const FlashcardNormal = ({ onEnterSortingMode }: Props) => {
   const [currentBatchIndex, setCurrentBatchIndex] = useState<number>(0);
   const [isShuffled, setIsShuffled] = useState<boolean>(false);
 
-  const BATCH_SIZE = 20;
+  const BATCH_SIZE = 30;
 
   const flipAnimation = useRef(new Animated.Value(0)).current;
 
   // Load initial batch of vocabulary
   const loadVocabularyBatch = async (shuffle: boolean = false) => {
+    let total = 0;
     try {
       setLoading(true);
       let batch: Vocabulary[];
 
       if (shuffle) {
+        console.log("loadVocabularyBatch - fetching random batch");
         batch = await fetchRandomVocabularyBatch(BATCH_SIZE);
       } else {
         batch = await fetchVocabularyBatch(
@@ -114,6 +116,7 @@ const FlashcardNormal = ({ onEnterSortingMode }: Props) => {
           BATCH_SIZE,
         );
       }
+      total = batch.length;
 
       console.log("loadVocabularyBatch - fetched batch of size:", batch);
 
@@ -137,6 +140,7 @@ const FlashcardNormal = ({ onEnterSortingMode }: Props) => {
     } finally {
       setLoading(false);
     }
+    return total;
   };
 
   // Shuffle current vocabulary cache
@@ -188,9 +192,9 @@ const FlashcardNormal = ({ onEnterSortingMode }: Props) => {
 
   useEffect(() => {
     (async () => {
-      const total = await getTotalVocabularyCount();
+      const total = await loadVocabularyBatch();
+
       setTotalCardsInDB(total);
-      await loadVocabularyBatch();
     })();
   }, []);
 
