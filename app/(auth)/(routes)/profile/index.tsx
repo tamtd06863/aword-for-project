@@ -2,7 +2,7 @@ import { useAppSelector } from "@/lib/hooks";
 import { supabase } from "@/lib/supabase";
 import { getColors } from "@/utls/colors";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { Link, router } from "expo-router";
 import { useColorScheme } from "nativewind";
 import React, { useEffect, useState } from "react";
 import {
@@ -12,6 +12,7 @@ import {
   Text,
   View,
   Modal,
+  FlatList,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import SignOutButton from "@/components/SignOutButton";
@@ -111,6 +112,38 @@ const Profile = () => {
     </View>
   );
 
+  const statItems = [
+    {
+      key: "streaks",
+      icon: "flame",
+      value: stats.streaks.toString(),
+      label: "Streaks",
+      iconColor: colors.accent.orange,
+    },
+    {
+      key: "totalExp",
+      icon: "flash",
+      value: stats.totalExp.toString(),
+      label: "Total exp",
+      iconColor: colors.accent.yellow,
+    },
+    {
+      key: "currentLeague",
+      icon: "diamond",
+      value: stats.currentLeague,
+      label: "Current league",
+      iconColor: colors.accent.yellow,
+    },
+    {
+      key: "topFinishes",
+      icon: "trophy",
+      value: stats.topFinishes.toString(),
+      label: "Top 1 finishes",
+      iconColor: colors.accent.yellow,
+      href: "/profile/achievements",
+    },
+  ] as const;
+
   return (
     <SafeAreaView
       className="flex-1"
@@ -129,9 +162,11 @@ const Profile = () => {
           onPress={() => setModalVisible(false)} // 👉 click ra ngoài sẽ đóng modal
         >
           <Pressable
-            className={
-              "h-40 dark:bg-dark bg bg-white mt-auto p-6 border-t border-gray-300 w-full"
-            }
+            className={"h-40 mt-auto p-6 border-t w-full"}
+            style={{
+              backgroundColor: colors.background.secondary,
+              borderColor: colors.border.secondary,
+            }}
             onPress={(e) => e.stopPropagation()} // 👉 chặn click bên trong modal làm đóng
           >
             <View className={"w-full items-end"}></View>
@@ -222,36 +257,31 @@ const Profile = () => {
           ) : (
             <>
               {/* Top Row */}
-              <View className="flex-row mb-3">
-                <StatCard
-                  icon="flame"
-                  value={stats.streaks.toString()}
-                  label="Streaks"
-                  iconColor={colors.accent.orange}
-                />
-                <StatCard
-                  icon="flash"
-                  value={stats.totalExp.toString()}
-                  label="Total exp"
-                  iconColor={colors.accent.yellow}
-                />
-              </View>
-
-              {/* Bottom Row */}
-              <View className="flex-row">
-                <StatCard
-                  icon="diamond"
-                  value={stats.currentLeague}
-                  label="Current league"
-                  iconColor={colors.accent.yellow}
-                />
-                <StatCard
-                  icon="trophy"
-                  value={stats.topFinishes.toString()}
-                  label="Top 1 finishes"
-                  iconColor={colors.accent.yellow}
-                />
-              </View>
+              <FlatList
+                data={statItems as unknown as ReadonlyArray<any>}
+                keyExtractor={(item: any) => item.key}
+                numColumns={2}
+                renderItem={({ item }: { item: any }) => {
+                  const content = (
+                    <StatCard
+                      icon={item.icon}
+                      value={item.value}
+                      label={item.label}
+                      iconColor={item.iconColor}
+                    />
+                  );
+                  if (item.href) {
+                    return (
+                      <Link href={item.href} asChild>
+                        <Pressable className="flex-1 mb-3">{content}</Pressable>
+                      </Link>
+                    );
+                  }
+                  return <View className="flex-1 mb-3">{content}</View>;
+                }}
+                contentContainerStyle={{ paddingBottom: 16 }}
+                showsVerticalScrollIndicator={false}
+              />
             </>
           )}
         </View>

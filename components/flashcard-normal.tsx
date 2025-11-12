@@ -17,36 +17,9 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { getPartOfSpeechFull } from "@/utls/get_part_of_speechfull";
 
 const { width } = Dimensions.get("window");
-
-const getPartOfSpeechFull = (pos: string): string => {
-  const posLower = pos.toLowerCase();
-  switch (posLower) {
-    case "n":
-      return "noun";
-    case "v":
-      return "verb";
-    case "adj":
-      return "adjective";
-    case "adv":
-      return "adverb";
-    case "pron":
-      return "pronoun";
-    case "prep":
-      return "preposition";
-    case "conj":
-      return "conjunction";
-    case "interj":
-      return "interjection";
-    case "det":
-      return "determiner";
-    case "aux":
-      return "auxiliary";
-    default:
-      return posLower;
-  }
-};
 
 const highlightWordInExample = (example: string, word: string, colors: any) => {
   if (!example || !word) return example;

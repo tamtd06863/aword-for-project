@@ -36,6 +36,57 @@ function computeSessionDelta(accuracy: number, avgTimeSec: number): number {
   return clamp01(round2(delta));
 }
 
+// compute streak function
+async function updateUserStreak(profileId: string) {
+  console.log("Updating streak for user", profileId);
+  const today = new Date().toISOString().split("T")[0]; // yyyy-mm-dd
+  console.log("Today's date:", today);
+
+  // Lấy streak hiện tại
+  const { data: streak } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", profileId)
+    .single();
+
+  if (!streak) return;
+
+  const lastDate = streak.last_active_at
+    ? new Date(streak.last_active_at).toISOString().split("T")[0]
+    : null;
+  console.log('last active date format should be "yyyy-mm-dd"', lastDate);
+  console.log(today === lastDate);
+
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split("T")[0];
+  console.log("Yesterday's date:", yesterdayStr);
+  console.log("Comparing lastDate with yesterday:", lastDate === yesterdayStr);
+
+  let currentStreak = streak.streak_days;
+
+  if (lastDate === yesterdayStr) {
+    // hôm qua có học → streak +1
+    currentStreak += 1;
+  } else if (lastDate === today) {
+    // đã tính streak hôm nay rồi → không làm gì
+    return;
+  } else {
+    // bị đứt streak → reset
+    currentStreak = 1;
+  }
+
+  console.log("Updating streak for user", profileId, "to", currentStreak);
+
+  await supabase
+    .from("profiles")
+    .update({
+      streak_days: currentStreak,
+      last_active_at: today,
+    })
+    .eq("id", profileId);
+}
+
 // RTK Query slice that uses Supabase client directly via `queryFn`
 // This demonstrates making multiple sequential Supabase calls inside a single endpoint
 export const vocabApi = createApi({
@@ -306,6 +357,9 @@ export const vocabApi = createApi({
             // Do not fail the whole mutation for analytics insert issues
           }
 
+          // Update user streak
+          await updateUserStreak(profileId);
+
           return { data: { updated, subRootsLinked, expGained: score } };
         } catch (e: any) {
           console.log(e);
@@ -315,8 +369,60 @@ export const vocabApi = createApi({
         }
       },
     }),
+    getTotalLearnedVocabCount: builder.query<number, void>({
+      async queryFn(_arg, _api, _extraOptions, _baseQuery) {
+        try {
+          // 1) Get current user for profile_id
+          const { data: userData, error: userError } =
+            await supabase.auth.getUser();
+          if (userError || !userData?.user?.id) {
+            return {
+              error: {
+                message: userError?.message || "Not authenticated",
+                code: userError?.name || "NO_USER",
+              },
+            };
+          }
+          const profileId = userData.user.id;
+
+          // 2) Query count of vocab with proficiency >= 0.7
+          const { count, error } = await supabase
+            .from("profile_vocab_progress")
+            .select("*", { count: "exact", head: true })
+            .eq("profile_id", profileId);
+
+          if (error) {
+            return { error: { message: error.message, code: error.code } };
+          }
+
+          const { count: subCount, error: subCountError } = await supabase
+            .from("profile_sub_vocab_progress")
+            .select("*", { count: "exact", head: true })
+            .eq("profile_id", profileId);
+
+          if (subCountError) {
+            return {
+              error: {
+                message: subCountError.message,
+                code: subCountError.code,
+              },
+            };
+          }
+
+          return { data: (count ?? 0) + (subCount ?? 0) };
+        } catch (e: any) {
+          return {
+            error: { message: e?.message ?? "Unknown error", code: "UNKNOWN" },
+          };
+        }
+      },
+      keepUnusedDataFor: 0,
+    }),
   }),
 });
 
-export const { useGetRandomVocabularyQuery, useUpdateVocabsProgressMutation } =
-  vocabApi;
+export const {
+  useGetRandomVocabularyQuery,
+  useUpdateVocabsProgressMutation,
+  useGetTotalLearnedVocabCountQuery,
+} = vocabApi;

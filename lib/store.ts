@@ -3,12 +3,17 @@ import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { learnApi } from "@/lib/features/learn/learnApi";
 import { vocabApi } from "@/lib/features/vocab/vocabApi";
 import { searchSlice } from "@/lib/features/search/searchSlice";
+import { profileApi } from "@/lib/features/profile/profileApi";
 
 export const makeStore = () => {
   return configureStore({
     reducer: rootReducer,
     middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware().concat(learnApi.middleware, vocabApi.middleware),
+      getDefaultMiddleware().concat(
+        learnApi.middleware,
+        vocabApi.middleware,
+        profileApi.middleware,
+      ),
   });
 };
 
@@ -17,6 +22,7 @@ const rootReducer = combineReducers({
   search: searchSlice.reducer,
   [learnApi.reducerPath]: learnApi.reducer,
   [vocabApi.reducerPath]: vocabApi.reducer,
+  [profileApi.reducerPath]: profileApi.reducer,
 });
 
 export type AppStore = ReturnType<typeof makeStore>;

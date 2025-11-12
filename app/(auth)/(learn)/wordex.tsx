@@ -1,9 +1,9 @@
 import { Vocabulary } from "@/models/Vocabulary";
-import { fetchAllVocabulary } from "@/supabase/vocabulary";
+import { fetchAllVocabulary, fetchVocabularyList } from "@/supabase/vocabulary";
 import { getColors } from "@/utls/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useColorScheme } from "nativewind";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -14,59 +14,150 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAppSelector } from "@/lib/hooks";
+import { getPartOfSpeechFull } from "@/utls/get_part_of_speechfull";
+
+const SCROLL_DELAY_MS = 250;
 
 const Wordex = () => {
   const { colorScheme } = useColorScheme();
+  const colors = getColors(colorScheme === "dark");
+
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<string>("");
-  // groupedData is a map: key -> { name: string, words: any[] }
   const [groupedData, setGroupedData] = useState<
-    Record<string, { name: string; words: any[] }>
+    Record<string, { name: string; words: Vocabulary[] }>
   >({});
   const [loading, setLoading] = useState(true);
 
   const searchQuery = useAppSelector((state) => state.search.query);
 
-  const colors = getColors(colorScheme === "dark");
+  const outerListRef = useRef<FlatList<string> | null>(null);
+  const innerListRefs = useRef<Record<string, FlatList<Vocabulary> | null>>({});
 
   useEffect(() => {
     loadVocabulary();
   }, []);
 
   const loadVocabulary = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       const grouped = await fetchAllVocabulary();
 
-      setGroupedData(grouped);
-    } catch (error) {
-      console.error("Error loading vocabulary:", error);
+      if (grouped && !Array.isArray(grouped)) {
+        // assume correct object shape
+        setGroupedData(
+          grouped as Record<string, { name: string; words: Vocabulary[] }>,
+        );
+      } else if (Array.isArray(grouped)) {
+        // fallback: single group
+        setGroupedData({
+          all: { name: "All", words: grouped as Vocabulary[] },
+        });
+      } else {
+        // final fallback: flat list
+        const flat = await fetchVocabularyList(100);
+        setGroupedData(
+          flat.length ? { all: { name: "All", words: flat } } : {},
+        );
+      }
+    } catch (e) {
+      console.error("loadVocabulary error", e);
+      setGroupedData({});
     } finally {
       setLoading(false);
     }
   };
 
-  // Filter group keys by group name or key (search)
-  const filteredGroupKeys = Object.keys(groupedData).filter((key) => {
-    const group = groupedData[key];
-    const name = group?.name ?? key;
-    return (
-      name.toLowerCase().includes(search.toLowerCase()) ||
-      key.toLowerCase().includes(search.toLowerCase())
-    );
-  });
+  // Filter groups by search: match group name or any word inside
+  const filteredGroupKeys = (() => {
+    const keys = Object.keys(groupedData);
+    if (!search.trim()) return keys;
+    const q = search.toLowerCase();
+    return keys.filter((k) => {
+      const g = groupedData[k];
+      if (!g) return false;
+      if (g.name.toLowerCase().includes(q) || k.toLowerCase().includes(q))
+        return true;
+      return g.words?.some((w) => (w.word || "").toLowerCase().includes(q));
+    });
+  })();
+
+  // Auto expand + scroll on global searchQuery change
+  useEffect(() => {
+    // If search query cleared -> collapse all and scroll to top
+    if (!searchQuery || searchQuery.trim() === "") {
+      setSearch("");
+      setExpanded("");
+      try {
+        outerListRef.current?.scrollToOffset({ offset: 0, animated: true });
+      } catch {}
+      return; // stop further expand logic
+    }
+    if (Object.keys(groupedData).length === 0) return;
+    setSearch(searchQuery); // sync to local
+    const q = searchQuery.toLowerCase();
+
+    const keys = Object.keys(groupedData);
+    let targetGroup: string | null = null;
+    let targetWordIndex = -1;
+    let targetGroupIndex = -1;
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      const words = groupedData[key]?.words || [];
+      const idx = words.findIndex((w) =>
+        (w.word || "").toLowerCase().includes(q),
+      );
+      if (idx >= 0) {
+        targetGroup = key;
+        targetWordIndex = idx;
+        targetGroupIndex = i;
+        break;
+      }
+    }
+    if (!targetGroup) return;
+    setExpanded(targetGroup);
+    try {
+      outerListRef.current?.scrollToIndex({
+        index: targetGroupIndex,
+        animated: true,
+        viewPosition: 0.2,
+      });
+    } catch {}
+    const inner = innerListRefs.current[targetGroup];
+    if (inner && targetWordIndex >= 0) {
+      try {
+        inner.scrollToIndex({
+          index: targetWordIndex,
+          animated: true,
+          viewPosition: 0.5,
+        });
+      } catch {}
+    }
+  }, [searchQuery, groupedData]);
 
   const renderItem: ListRenderItem<Vocabulary> = ({ item }) => (
     <View
-      className="mt-3 pl-4 border-l-2 ml-2 pb-3"
-      style={{ borderColor: colors.accent.blue }}
+      style={{
+        marginTop: 12,
+        paddingLeft: 12,
+        borderLeftWidth: 2,
+        borderColor: colors.accent.blue,
+      }}
     >
-      <Text
-        className="text-2xl font-bold mb-2"
-        style={{ color: colors.text.primary }}
-      >
-        {item.word}
-      </Text>
+      <View className={"gap-2 flex-row items-center"}>
+        <Text
+          style={{
+            color: colors.text.primary,
+            fontSize: 20,
+            fontWeight: "700",
+          }}
+        >
+          {item.word}
+        </Text>
+        <Text className="text-sm " style={{ color: colors.text.secondary }}>
+          {getPartOfSpeechFull(item.pos ?? "")}
+        </Text>
+      </View>
       <Text className="text-lg mb-2" style={{ color: colors.text.secondary }}>
         {item.phonetic}
       </Text>
@@ -183,13 +274,14 @@ const Wordex = () => {
   if (loading) {
     return (
       <SafeAreaView
-        className="flex-1"
-        style={{ backgroundColor: colors.background.primary }}
+        style={{ flex: 1, backgroundColor: colors.background.primary }}
       >
-        <View className="flex-1 justify-center items-center">
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
           <ActivityIndicator size="large" color={colors.primary.main} />
-          <Text className="mt-4" style={{ color: colors.text.secondary }}>
-            Loading vocabulary...
+          <Text style={{ marginTop: 16, color: colors.text.secondary }}>
+            Đang tải từ vựng...
           </Text>
         </View>
       </SafeAreaView>
@@ -198,65 +290,62 @@ const Wordex = () => {
 
   return (
     <SafeAreaView
-      className="flex-1"
-      style={{ backgroundColor: colors.background.primary }}
+      style={{ flex: 1, backgroundColor: colors.background.primary }}
     >
-      {/* Thanh Search */}
-      {/*<View className="flex-row items-center bg-blue-600 px-3 py-2">*/}
-      {/*    <Ionicons name="arrow-back" size={24} color="#fff"/>*/}
-      {/*    <TextInput*/}
-      {/*        className="flex-1 mx-3 text-white text-base"*/}
-      {/*        placeholder="Search here..."*/}
-      {/*        placeholderTextColor="#ccc"*/}
-      {/*        value={search}*/}
-      {/*        onChangeText={setSearch}*/}
-      {/*    />*/}
-      {/*    <Ionicons name="search" size={22} color="#fff"/>*/}
-      {/*</View>*/}
-
-      {/* Danh sách nhóm (grouped by root/sub-root) */}
       <FlatList
+        ref={outerListRef}
         data={filteredGroupKeys}
-        keyExtractor={(key) => key}
+        keyExtractor={(k) => k}
         renderItem={({ item: groupKey }) => {
-          const group = groupedData[groupKey] ?? { name: groupKey, words: [] };
+          const group = groupedData[groupKey];
+          if (!group) return null;
           return (
             <View
-              className="m-3 rounded-xl p-3 shadow"
-              style={{ backgroundColor: colors.background.secondary }}
+              style={{
+                margin: 12,
+                padding: 12,
+                borderRadius: 16,
+                backgroundColor: colors.background.secondary,
+              }}
             >
               <TouchableOpacity
-                className="flex-row justify-between items-center"
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
                 onPress={() =>
                   setExpanded(expanded === groupKey ? "" : groupKey)
                 }
               >
-                <View className="flex-1">
+                <View style={{ flex: 1 }}>
                   <Text
-                    className="text-3xl font-bold"
-                    style={{ color: colors.text.primary }}
+                    style={{
+                      fontSize: 24,
+                      fontWeight: "700",
+                      color: colors.text.primary,
+                    }}
                   >
                     {group.name}
                   </Text>
-                  <Text
-                    className="text-base mt-1"
-                    style={{ color: colors.text.secondary }}
-                  >
-                    {group.words?.length || 0} words
+                  <Text style={{ marginTop: 4, color: colors.text.secondary }}>
+                    {group.words.length} từ
                   </Text>
                 </View>
                 <Ionicons
                   name={expanded === groupKey ? "chevron-up" : "chevron-down"}
-                  size={30}
+                  size={28}
                   color={colors.text.primary}
                 />
               </TouchableOpacity>
-
               {expanded === groupKey && (
-                <View className="mt-3">
+                <View style={{ marginTop: 8 }}>
                   <FlatList
+                    ref={(r) => {
+                      innerListRefs.current[groupKey] = r;
+                    }}
                     data={group.words}
-                    keyExtractor={(item) => item.id}
+                    keyExtractor={(w) => String(w.id)}
                     renderItem={renderItem}
                     scrollEnabled={false}
                   />

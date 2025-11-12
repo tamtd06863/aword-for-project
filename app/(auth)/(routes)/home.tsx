@@ -7,40 +7,73 @@ import { useColorScheme } from "nativewind";
 import React, { useEffect, useRef } from "react";
 import { Animated, Button, Image, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useUpdateVocabsProgressMutation } from "@/lib/features/vocab/vocabApi";
+import {
+  useGetTotalLearnedVocabCountQuery,
+  useUpdateVocabsProgressMutation,
+} from "@/lib/features/vocab/vocabApi";
+import { useGetProfileQuery } from "@/lib/features/profile/profileApi";
 
 const Home = () => {
   const flameAnimation = useRef<LottieView>(null);
   const gradientAnimation = useRef(new Animated.Value(0)).current;
   const user = useAppSelector((state) => state.auth.auth);
   const { colorScheme } = useColorScheme();
-  const [updateProgress, { isLoading: isUpdatingProgress }] =
-    useUpdateVocabsProgressMutation();
+  const { data: profile, isLoading: isLoadingProfile } = useGetProfileQuery();
+  const { data: vocabCount, isLoading: isLoadingVocabCount } =
+    useGetTotalLearnedVocabCountQuery();
 
   const colors = getColors(colorScheme === "dark");
 
-  useEffect(() => {
-    flameAnimation.current?.play();
+  // helpers to check dates (local day comparison)
+  const parseLocalDate = (iso?: string | null) => {
+    if (!iso) return null;
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return null;
+    return d;
+  };
 
-    // Gradient animation
-    const animateGradient = () => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(gradientAnimation, {
-            toValue: 1,
-            duration: 2000,
-            useNativeDriver: false,
-          }),
-          Animated.timing(gradientAnimation, {
-            toValue: 0,
-            duration: 2000,
-            useNativeDriver: false,
-          }),
-        ]),
-      ).start();
-    };
-    animateGradient();
-  }, []);
+  const isSameLocalDay = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
+
+  const lastActive = parseLocalDate(profile?.last_active_at ?? null);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+
+  const isTodayActive = lastActive ? isSameLocalDay(lastActive, today) : false;
+  const isYesterdayActive = lastActive
+    ? isSameLocalDay(lastActive, yesterday)
+    : false;
+
+  useEffect(() => {
+    // Only run Lottie and gradient when user was active today
+    if (isTodayActive) {
+      flameAnimation.current?.play();
+
+      const animateGradient = () => {
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(gradientAnimation, {
+              toValue: 1,
+              duration: 2000,
+              useNativeDriver: false,
+            }),
+            Animated.timing(gradientAnimation, {
+              toValue: 0,
+              duration: 2000,
+              useNativeDriver: false,
+            }),
+          ]),
+        ).start();
+      };
+      animateGradient();
+    } else {
+      // reset gradient value so Animated.Text won't show previous interpolation
+      gradientAnimation.setValue(0);
+    }
+  }, [isTodayActive]);
 
   return (
     <SafeAreaView className="flex-1 bg-white dark:bg-gray-900 px-5 pt-10">
@@ -83,33 +116,63 @@ const Home = () => {
 
       {/* Streak */}
       <View className="flex-row items-center mt-6 self-end">
-        <LottieView
-          ref={flameAnimation}
-          autoPlay
-          loop
-          style={{
-            width: 40,
-            height: 40,
-          }}
-          source={require("../../../assets/animations/streak-fire.json")}
-        />
-        <Animated.Text
-          className="ml-2 font-semibold text-2xl"
-          style={{
-            color: gradientAnimation.interpolate({
-              inputRange: [0, 0.5, 1],
-              outputRange: ["#FF6B35", "#FFD23F", "#FF6B35"],
-            }),
-          }}
-        >
-          20 streak
-        </Animated.Text>
+        {isTodayActive ? (
+          <LottieView
+            ref={flameAnimation}
+            autoPlay
+            loop
+            style={{ width: 40, height: 40 }}
+            source={require("../../../assets/animations/streak-fire.json")}
+          />
+        ) : isYesterdayActive ? (
+          <MaterialCommunityIcons
+            name="fire"
+            size={40}
+            color={colors.text.secondary}
+          />
+        ) : null}
+
+        {isLoadingProfile ? (
+          <></>
+        ) : isTodayActive ? (
+          <Animated.Text
+            className="ml-2 font-semibold text-2xl"
+            style={{
+              color: gradientAnimation.interpolate({
+                inputRange: [0, 0.5, 1],
+                outputRange: ["#FF6B35", "#FFD23F", "#FF6B35"],
+              }),
+            }}
+          >
+            {profile ? profile.streak_days : "0"} streak
+          </Animated.Text>
+        ) : isYesterdayActive ? (
+          <Text
+            className="ml-2 font-semibold text-2xl"
+            style={{ color: colors.text.secondary }}
+          >
+            {profile ? profile.streak_days : 0} streak
+          </Text>
+        ) : (
+          <Text
+            className="ml-2 font-semibold text-2xl"
+            style={{ color: colors.text.secondary }}
+          >
+            0 streak
+          </Text>
+        )}
       </View>
 
       {/* Title */}
-      <Text className="text-5xl font-semibold text-gray-600 dark:text-gray-300 my-8 text-right">
-        30 words
-      </Text>
+      {isLoadingVocabCount ? (
+        <Text className="text-5xl font-semibold text-gray-600 dark:text-gray-300 my-8 text-right">
+          0 words
+        </Text>
+      ) : (
+        <Text className="text-5xl font-semibold text-gray-600 dark:text-gray-300 my-8 text-right">
+          {vocabCount} words
+        </Text>
+      )}
 
       {/* Menu buttons */}
       <Link href={"/learning"} asChild>

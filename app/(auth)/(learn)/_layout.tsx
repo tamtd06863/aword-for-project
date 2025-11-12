@@ -6,7 +6,7 @@ import { FormField } from "heroui-native";
 import { useColorScheme } from "nativewind";
 import React, { useState } from "react";
 import { TextInput, TouchableOpacity, View } from "react-native";
-import { setQuery } from "@/lib/features/search/searchSlice";
+import { clearQuery, setQuery } from "@/lib/features/search/searchSlice";
 import { useAppDispatch } from "@/lib/hooks";
 
 const LearnLayout = () => {
@@ -21,6 +21,8 @@ const LearnLayout = () => {
   const handleSearch = (query: string) => {
     if (query.trim().length > 0) {
       dispatch(setQuery(query));
+    } else {
+      dispatch(clearQuery());
     }
   };
 

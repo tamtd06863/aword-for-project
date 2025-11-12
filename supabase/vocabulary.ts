@@ -228,10 +228,19 @@ export const fetchVocabularyBatch = async (
         ...d,
         proficiency: item.proficiency,
         source: item.source, // để bạn biết từ bảng nào
-        pos: d.vocab_senses?.[0]?.pos || "",
-        definition_vi: d.vocab_senses?.[0]?.definition || "",
-        example_en: d.vocab_examples?.[0]?.example_en || "",
-        example_vi: d.vocab_examples?.[0]?.example_vi || "",
+        pos: d.vocab_senses?.[0]?.pos || d.sub_vocab_sense?.[0]?.pos || "",
+        definition_vi:
+          d.vocab_senses?.[0]?.definition ||
+          d.sub_vocab_sense?.[0]?.definition ||
+          "",
+        example_en:
+          d.vocab_examples?.[0]?.example_en ||
+          d.sub_vocab_example?.[0]?.example_en ||
+          "",
+        example_vi:
+          d.vocab_examples?.[0]?.example_vi ||
+          d.sub_vocab_example?.[0]?.example_vi ||
+          "",
       };
     }) as Vocabulary[];
   } catch (err) {
@@ -324,10 +333,19 @@ export const fetchRandomVocabularyBatch = async (
         ...d,
         proficiency: item.proficiency,
         source: item.source, // để bạn biết từ bảng nào
-        pos: d.vocab_senses?.[0]?.pos || "",
-        definition_vi: d.vocab_senses?.[0]?.definition || "",
-        example_en: d.vocab_examples?.[0]?.example_en || "",
-        example_vi: d.vocab_examples?.[0]?.example_vi || "",
+        pos: d.vocab_senses?.[0]?.pos || d.sub_vocab_sense?.[0]?.pos || "",
+        definition_vi:
+          d.vocab_senses?.[0]?.definition ||
+          d.sub_vocab_sense?.[0]?.definition ||
+          "",
+        example_en:
+          d.vocab_examples?.[0]?.example_en ||
+          d.sub_vocab_example?.[0]?.example_en ||
+          "",
+        example_vi:
+          d.vocab_examples?.[0]?.example_vi ||
+          d.sub_vocab_example?.[0]?.example_vi ||
+          "",
       };
     }) as Vocabulary[];
   } catch (err) {
@@ -336,9 +354,11 @@ export const fetchRandomVocabularyBatch = async (
   }
 };
 
-export const fetchAllVocabulary = async (): Promise<any> => {
+export const fetchAllVocabulary = async (): Promise<
+  Record<string, { name: string; words: any[] }>
+> => {
   try {
-
+    // 1️⃣ Lấy tất cả vocab
     const { data: vocabData, error: vocabError } = await supabase.from("vocab")
       .select(`
         *,
@@ -349,7 +369,7 @@ export const fetchAllVocabulary = async (): Promise<any> => {
 
     if (vocabError) {
       console.error("Error fetching vocab:", vocabError);
-      return;
+      return {};
     }
 
     // 2️⃣ Lấy tất cả sub_vocab (từ dẫn xuất)
@@ -372,7 +392,7 @@ export const fetchAllVocabulary = async (): Promise<any> => {
 
     if (subError) {
       console.error("Error fetching sub_vocab:", subError);
-      return;
+      return {};
     }
 
     // 3️⃣ Gộp vocab và sub_vocab lại thành 1 mảng chung
@@ -395,28 +415,21 @@ export const fetchAllVocabulary = async (): Promise<any> => {
       })),
     ];
 
-    // 4️⃣ Group theo prefix
-    const grouped: Record<
-      string,
-      {
-        name: string;
-        words: any[];
-      }
-    > = {};
+    // 4️⃣ Group by root/sub_root id (fallback to item.id)
+    const grouped: Record<string, { name: string; words: any[] }> = {};
     combined.forEach((item) => {
-      const key = item.root_id || item.sub_root_id;
-      if (!grouped[key])
-        grouped[key] = {
-          name:
-            item.type === "vocab" ? item.root?.root_code : item.sub_root?.token,
-          words: [],
-        };
+      const key = item.root_id ?? item.sub_root_id ?? item.id ?? "ungrouped";
+      const name =
+        item.type === "vocab"
+          ? (item.root?.root_code ?? String(key))
+          : (item.sub_root?.token ?? String(key));
+      if (!grouped[key]) grouped[key] = { name, words: [] };
       grouped[key].words.push(item);
     });
 
     return grouped;
   } catch (error) {
     console.error("Error fetching all vocabulary:", error);
-    return [];
+    return {};
   }
 };

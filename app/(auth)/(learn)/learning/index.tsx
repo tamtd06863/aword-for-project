@@ -13,6 +13,7 @@ import { router } from "expo-router";
 import { useColorScheme } from "nativewind";
 import React from "react";
 import { ActivityIndicator, Text, View } from "react-native";
+import { useLazyGetProfileQuery } from "@/lib/features/profile/profileApi";
 
 const Index = () => {
   const { colorScheme } = useColorScheme();
@@ -31,6 +32,8 @@ const Index = () => {
   );
   const [updateProgress, { isLoading: isUpdatingProgress }] =
     useUpdateVocabsProgressMutation();
+
+  const [getProfile] = useLazyGetProfileQuery();
 
   // Tổng kết session
   const [expGained, setExpGained] = React.useState(0);
@@ -282,6 +285,7 @@ const Index = () => {
                               } catch {
                                 // ignore
                               }
+                              getProfile();
                               setStep(totalWords * 2 + 1);
                             })();
                           }
