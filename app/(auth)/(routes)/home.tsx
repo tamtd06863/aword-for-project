@@ -1,17 +1,17 @@
+import { useGetProfileQuery } from "@/lib/features/profile/profileApi";
+import {
+  useGetTotalLearnedVocabCountQuery
+} from "@/lib/features/vocab/vocabApi";
 import { useAppSelector } from "@/lib/hooks";
+import { supabase } from "@/lib/supabase";
 import { getColors } from "@/utls/colors";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, router } from "expo-router";
 import LottieView from "lottie-react-native";
 import { useColorScheme } from "nativewind";
 import React, { useEffect, useRef } from "react";
-import { Animated, Button, Image, Pressable, Text, View } from "react-native";
+import { Animated, Image, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  useGetTotalLearnedVocabCountQuery,
-  useUpdateVocabsProgressMutation,
-} from "@/lib/features/vocab/vocabApi";
-import { useGetProfileQuery } from "@/lib/features/profile/profileApi";
 
 const Home = () => {
   const flameAnimation = useRef<LottieView>(null);
@@ -23,6 +23,20 @@ const Home = () => {
     useGetTotalLearnedVocabCountQuery();
 
   const colors = getColors(colorScheme === "dark");
+
+  // Helper function to get avatar URL from path
+  const getAvatarUrl = (avatarPath: string | null | undefined): string => {
+    if (!avatarPath) {
+      return user.avatar_url || "https://i.pravatar.cc/100";
+    }
+    // If it's already a full URL, return it
+    if (avatarPath.startsWith("http://") || avatarPath.startsWith("https://")) {
+      return avatarPath;
+    }
+    // Otherwise, it's a path in storage, get public URL
+    const { data } = supabase.storage.from("avatars").getPublicUrl(avatarPath);
+    return data.publicUrl;
+  };
 
   // helpers to check dates (local day comparison)
   const parseLocalDate = (iso?: string | null) => {
@@ -83,21 +97,32 @@ const Home = () => {
           onPress={() => router.push("/profile")}
           className="flex-row items-center"
         >
-          {user?.avatar_url ? (
+          {isLoadingProfile ? (
+            <View className="flex-row items-center">
+              <View
+                className="w-10 h-10 rounded-full mr-2"
+                style={{ backgroundColor: colors.surface.secondary }}
+              />
+              <View
+                className="h-4 w-24 rounded"
+                style={{ backgroundColor: colors.surface.secondary }}
+              />
+            </View>
+          ) : (
             <>
               <Image
-                source={{ uri: user.avatar_url }}
+                source={{
+                  uri:
+                    getAvatarUrl(profile?.avatar_url) ||
+                    user.avatar_url ||
+                    "https://i.pravatar.cc/100",
+                }}
                 className="w-10 h-10 rounded-full mr-2"
               />
               <Text className="text-base font-semibold text-gray-900 dark:text-white">
-                {user.name}
+                {profile?.full_name || user.name || "User"}
               </Text>
             </>
-          ) : (
-            <Image
-              source={{ uri: "https://i.pravatar.cc/100" }}
-              className="w-10 h-10 rounded-full mr-2"
-            />
           )}
         </Pressable>
 

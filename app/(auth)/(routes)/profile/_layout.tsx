@@ -1,5 +1,5 @@
-import React from "react";
 import { Stack } from "expo-router";
+import React from "react";
 
 function _Layout() {
   return (
@@ -8,6 +8,12 @@ function _Layout() {
         name="index"
         options={{
           headerTitle: "Index",
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="edit"
+        options={{
           headerShown: false,
         }}
       />
