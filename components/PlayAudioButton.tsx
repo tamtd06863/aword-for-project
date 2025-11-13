@@ -27,6 +27,7 @@ const PlayAudioButton = ({ audioPath }: { audioPath: string }) => {
       className="ml-1 relative z-21 bg-red"
       style={{ zIndex: 21 }}
       onPress={async (event) => {
+        console.log("Play audio pressed", audioPath);
         event.preventDefault();
         await player.seekTo(0);
         player.play();

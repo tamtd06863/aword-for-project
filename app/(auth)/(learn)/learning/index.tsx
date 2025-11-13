@@ -9,7 +9,6 @@ import {
   useLazyGetTotalLearnedVocabCountQuery,
   useUpdateVocabsProgressMutation,
   type QuestionResult,
-  useLazyGetTotalLearnedVocabCountQuery,
 } from "@/lib/features/vocab/vocabApi";
 import { getColors } from "@/utls/colors";
 import { router } from "expo-router";
@@ -182,7 +181,7 @@ const Index = () => {
               );
               // Replace !empty with a visual blank indicator
               const formattedQuestion = q.question.replace(/!empty/gi, "___");
-              
+
               return (
                 <QuizFourOptions
                   key={`quiz-${currentQuestionIndex}`}

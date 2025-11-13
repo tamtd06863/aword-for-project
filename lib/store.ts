@@ -4,6 +4,7 @@ import { learnApi } from "@/lib/features/learn/learnApi";
 import { vocabApi } from "@/lib/features/vocab/vocabApi";
 import { searchSlice } from "@/lib/features/search/searchSlice";
 import { profileApi } from "@/lib/features/profile/profileApi";
+import { leaderboardApi } from "@/lib/features/leaderboard/leaderboardApi";
 
 export const makeStore = () => {
   return configureStore({
@@ -13,6 +14,7 @@ export const makeStore = () => {
         learnApi.middleware,
         vocabApi.middleware,
         profileApi.middleware,
+        leaderboardApi.middleware,
       ),
   });
 };
@@ -23,6 +25,7 @@ const rootReducer = combineReducers({
   [learnApi.reducerPath]: learnApi.reducer,
   [vocabApi.reducerPath]: vocabApi.reducer,
   [profileApi.reducerPath]: profileApi.reducer,
+  [leaderboardApi.reducerPath]: leaderboardApi.reducer,
 });
 
 export type AppStore = ReturnType<typeof makeStore>;
