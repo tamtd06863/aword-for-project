@@ -1,7 +1,20 @@
 import { Stack } from "expo-router";
 import React from "react";
+import { useColorScheme } from "nativewind";
+import { getColors } from "@/utls/colors";
 
-function _Layout() {
+function ProfileLayout() {
+  const { colorScheme } = useColorScheme();
+  const colors = getColors(colorScheme === "dark");
+
+  const headerCommon = {
+    // Use primary.main for header background (matches Learn layout)
+    headerStyle: { backgroundColor: colors.primary.main },
+    // Use header text color token for icons/titles
+    headerTintColor: colors.text.header,
+    headerTitleStyle: { color: colors.text.header },
+  } as const;
+
   return (
     <Stack>
       <Stack.Screen
@@ -21,10 +34,11 @@ function _Layout() {
         name="achievements"
         options={{
           headerTitle: "Achievements",
+          ...headerCommon,
         }}
       />
     </Stack>
   );
 }
 
-export default _Layout;
+export default ProfileLayout;

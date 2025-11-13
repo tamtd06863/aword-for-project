@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { leaderboardSupabase, supabase } from "@/lib/supabase";
 import { createApi, fakeBaseQuery } from "@reduxjs/toolkit/query/react";
 
 // Lightweight error shape for queryFn
@@ -198,7 +198,8 @@ export const profileApi = createApi({
             return {
               error: {
                 message:
-                  uploadError.message || "Failed to upload avatar. Please try again.",
+                  uploadError.message ||
+                  "Failed to upload avatar. Please try again.",
                 code: uploadError.message,
               },
             };
@@ -225,6 +226,186 @@ export const profileApi = createApi({
       },
       invalidatesTags: ["Profile"],
     }),
+
+    // New endpoint: getTotalExp for current authenticated user
+    getTotalExp: builder.query<number, void>({
+      async queryFn(_arg, _api, _extraOptions, _baseQuery) {
+        try {
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+
+          if (!user) {
+            return {
+              error: {
+                message: "User not authenticated",
+                code: "UNAUTHORIZED",
+              },
+            };
+          }
+
+          const userId = user.id;
+
+          // Fetch xp_events rows for the user and sum points in JS
+          const { data: xpRows, error } = await leaderboardSupabase
+            .from("xp_events")
+            .select("points")
+            .eq("user_id", userId);
+
+          if (error) {
+            return { error: { message: error.message, code: error.code } };
+          }
+
+          const total = Array.isArray(xpRows)
+            ? xpRows.reduce(
+                (s: number, r: any) => s + (Number(r.points) || 0),
+                0,
+              )
+            : 0;
+
+          return { data: total };
+        } catch (e: any) {
+          return {
+            error: { message: e?.message ?? "Unknown error", code: "UNKNOWN" },
+          };
+        }
+      },
+      providesTags: ["Profile"],
+    }),
+
+    // New endpoint: getLastWeekRank for the current authenticated user
+    getLastWeekRank: builder.query<
+      {
+        rank: number | null;
+        week_id: string | null;
+        week_start: string | null;
+      },
+      void
+    >({
+      async queryFn(_arg, _api, _extraOptions, _baseQuery) {
+        try {
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+
+          if (!user) {
+            return {
+              error: {
+                message: "User not authenticated",
+                code: "UNAUTHORIZED",
+              },
+            };
+          }
+
+          // Find most recent closed week
+          const { data: weeks, error: weeksError } = await leaderboardSupabase
+            .from("weeks")
+            .select("id, week_start")
+            .eq("status", "closed")
+            .order("week_start", { ascending: false })
+            .limit(1);
+
+          if (weeksError) {
+            return {
+              error: { message: weeksError.message, code: weeksError.code },
+            };
+          }
+
+          if (!weeks || weeks.length === 0) {
+            return { data: { rank: null, week_id: null, week_start: null } };
+          }
+
+          const week = weeks[0] as any;
+          const weekId = week.id as string;
+
+          // Fetch all xp_events for that week and aggregate totals per user
+          const { data: xpRows, error: xpError } = await leaderboardSupabase
+            .from("xp_events")
+            .select("user_id, points")
+            .eq("week_id", weekId);
+
+          if (xpError) {
+            return { error: { message: xpError.message, code: xpError.code } };
+          }
+
+          const totals = new Map<string, number>();
+          if (Array.isArray(xpRows)) {
+            xpRows.forEach((r: any) => {
+              const uid = String(r.user_id);
+              const pts = Number(r.points) || 0;
+              totals.set(uid, (totals.get(uid) || 0) + pts);
+            });
+          }
+
+          const entries = Array.from(totals.entries()).map(([uid, pts]) => ({
+            uid,
+            pts,
+          }));
+          entries.sort((a, b) => b.pts - a.pts);
+
+          const idx = entries.findIndex((e) => e.uid === user.id);
+          const rank = idx === -1 ? null : idx + 1;
+
+          return {
+            data: {
+              rank,
+              week_id: weekId,
+              week_start: week.week_start ?? null,
+            },
+          };
+        } catch (e: any) {
+          return {
+            error: { message: e?.message ?? "Unknown error", code: "UNKNOWN" },
+          };
+        }
+      },
+      providesTags: ["Profile"],
+    }),
+
+    // Alternative RPC-backed endpoint: getLastWeekRankRpc
+    // Requires you to define a Postgres function `leaderboard.get_last_week_rank()` that returns
+    // { rank bigint, week_id uuid, week_start timestamp with time zone }
+    getLastWeekRankRpc: builder.query<
+      {
+        rank: number | null;
+        week_id: string | null;
+        week_start: string | null;
+      },
+      void
+    >({
+      async queryFn(_arg, _api, _extraOptions, _baseQuery) {
+        try {
+          // call RPC on leaderboard schema - this must be created in DB
+          const { data, error } =
+            await leaderboardSupabase.rpc("get_last_week_rank");
+          if (error) {
+            return { error: { message: error.message, code: error.code } };
+          }
+
+          // RPC may return row or array
+          const payload = Array.isArray(data) ? data[0] : data;
+          if (!payload) {
+            return { data: { rank: null, week_id: null, week_start: null } };
+          }
+
+          return {
+            data: {
+              rank:
+                payload.rank === null || payload.rank === undefined
+                  ? null
+                  : Number(payload.rank),
+              week_id: payload.week_id ?? null,
+              week_start: payload.week_start ?? null,
+            },
+          };
+        } catch (e: any) {
+          return {
+            error: { message: e?.message ?? "Unknown error", code: "UNKNOWN" },
+          };
+        }
+      },
+      providesTags: ["Profile"],
+    }),
   }),
   tagTypes: ["Profile"],
 });
@@ -234,4 +415,7 @@ export const {
   useLazyGetProfileQuery,
   useUpdateProfileMutation,
   useUpdateAvatarMutation,
+  useGetTotalExpQuery,
+  useGetLastWeekRankQuery,
+  useGetLastWeekRankRpcQuery,
 } = profileApi;

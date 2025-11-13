@@ -1,292 +1,338 @@
-import { Avatar } from "heroui-native";
-import React from "react";
-import { Image, ScrollView, Text, View } from "react-native";
-import Foundation from "@expo/vector-icons/Foundation";
-import { Divider } from "heroui-native";
+import React, { useMemo } from "react";
+import { ScrollView, Text, View, Image } from "react-native";
+import { Avatar, Divider } from "heroui-native";
+import { useColorScheme } from "nativewind";
+import { getColors } from "@/utls/colors";
+import { useGetCurrentWeekLeaderboardQuery } from "@/lib/features/leaderboard/leaderboardApi";
+import { supabase } from "@/lib/supabase";
 
 const Leaderboard = () => {
-  return (
-    <View className="flex-1 bg-white dark:bg-gray-900">
-      {/*<View className="flex-1 justify-center items-center">*/}
-      {/*  <Text className="text-2xl font-bold text-gray-900 dark:text-white">*/}
-      {/*    Leaderboard*/}
-      {/*  </Text>*/}
-      {/*  <Text className="text-gray-600 dark:text-gray-400 mt-2">*/}
-      {/*    Coming soon...*/}
-      {/*  </Text>*/}
-      {/*</View>*/}
+  const { colorScheme } = useColorScheme();
+  const colors = getColors(colorScheme === "dark");
 
-      <Ranks />
+  const {
+    data: entries,
+    isLoading,
+    isError,
+  } = useGetCurrentWeekLeaderboardQuery();
+
+  // Helper to transform storage path -> public URL
+  const getAvatarUrl = (avatarPath?: string | null): string | undefined => {
+    if (!avatarPath) return undefined;
+    if (avatarPath.startsWith("http://") || avatarPath.startsWith("https://")) {
+      return avatarPath;
+    }
+    try {
+      const { data } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(avatarPath);
+      return data.publicUrl;
+    } catch {
+      return undefined;
+    }
+  };
+
+  // Sort by rank to ensure correct order regardless of backend ordering
+  const sorted = useMemo(
+    () => (entries ? [...entries].sort((a, b) => a.rank - b.rank) : []),
+    [entries],
+  );
+  const topThree = useMemo(() => sorted.slice(0, 3), [sorted]);
+
+  return (
+    <View
+      className="flex-1"
+      style={{ backgroundColor: colors.background.primary }}
+    >
+      {/* Header */}
+      <View className="px-5 pt-6 pb-3">
+        <View
+          className="mt-3 self-start px-3 py-1 rounded-full"
+          style={{ backgroundColor: colors.surface.tertiary }}
+        >
+          <Text
+            className="text-xs font-semibold"
+            style={{ color: colors.text.primary }}
+          >
+            This week
+          </Text>
+        </View>
+      </View>
+
       <Divider />
 
-      <ScrollView className={"flex-1 pt-2 h-full"}>
+      {/* Top 3 */}
+      <View className="px-5 py-4">
+        {isLoading ? (
+          <Top3Skeleton
+            colors={{
+              chip: colors.surface.secondary,
+              text: colors.text.primary,
+            }}
+          />
+        ) : isError ? (
+          <Text style={{ color: colors.text.secondary }}>
+            Failed to load leaderboard.
+          </Text>
+        ) : (
+          <Top3
+            entries={topThree}
+            getAvatarUrl={getAvatarUrl}
+            colors={colors}
+          />
+        )}
+      </View>
+
+      <Divider />
+
+      {/* List */}
+      <ScrollView className="flex-1 pt-2 h-full">
         <View className="px-5 py-5">
-          {/* Promoted Section */}
-          <View className={"flex flex-col gap-5"}>
-            {leaderboardData.promoted.map((user, index) => (
-              <View
-                key={user.id}
-                className={"w-full flex flex-row gap-2 items-center"}
-              >
-                <Text className={"font-bold text-gray-900 dark:text-white"}>
-                  {index + 1}
+          {isLoading ? (
+            <ListSkeleton colors={{ row: colors.surface.secondary }} />
+          ) : (
+            <View className="flex flex-col gap-4">
+              {sorted.map((item) => (
+                <View
+                  key={`${item.profile.id}-${item.rank}`}
+                  className="w-full flex flex-row gap-3 items-center"
+                >
+                  <Text
+                    className="w-8 text-center font-bold"
+                    style={{ color: colors.text.primary }}
+                  >
+                    {item.rank}
+                  </Text>
+                  <ProfileRow
+                    name={
+                      item.profile.full_name || item.profile.email || "User"
+                    }
+                    avatarUrl={
+                      getAvatarUrl(item.profile.avatar_url) ||
+                      "https://cdn-icons-png.flaticon.com/512/3237/3237472.png"
+                    }
+                    points={item.points_total}
+                    colors={colors}
+                  />
+                </View>
+              ))}
+              {sorted.length === 0 && !isLoading && (
+                <Text style={{ color: colors.text.secondary }}>
+                  Learn more to appear on the leaderboard!
                 </Text>
-                <ProfileCard
-                  key={user.id}
-                  id={user.id.toString()}
-                  avatar={user.avatar}
-                  points={user.points}
-                />
-              </View>
-            ))}
-          </View>
-
-          <View
-            className={
-              "w-full flex flex-row items-center justify-center gap-3 my-5"
-            }
-          >
-            <Foundation name="arrow-up" size={28} color="#31C75E" />
-            <Text className={"text-[#31C75E] font-bold "}>Promotion group</Text>
-            <Foundation name="arrow-up" size={28} color="#31C75E" />
-          </View>
-
-          {/* Regular Section */}
-          <View className={"flex flex-col gap-5"}>
-            {leaderboardData.regular.map((user, index) => (
-              <View
-                key={user.id}
-                className={"w-full flex flex-row gap-2 items-center"}
-              >
-                <Text className={"font-bold text-gray-900 dark:text-white"}>
-                  {index + leaderboardData.promoted.length + 1}
-                </Text>
-                <ProfileCard
-                  key={user.id}
-                  id={user.id.toString()}
-                  avatar={user.avatar}
-                  points={user.points}
-                />
-              </View>
-            ))}
-          </View>
-
-          <View
-            className={
-              "w-full flex flex-row items-center justify-center gap-3 my-5"
-            }
-          >
-            <Foundation name="arrow-down" size={28} color="#C73133" />
-            <Text className={"text-[#C73133] font-bold"}>Relegation group</Text>
-            <Foundation name="arrow-down" size={28} color="#C73133" />
-          </View>
-
-          {/* Demoted Section */}
-          <View className={"flex flex-col gap-5"}>
-            {leaderboardData.demoted.map((user, index) => (
-              <View
-                key={user.id}
-                className={"w-full flex flex-row gap-2 items-center"}
-              >
-                <Text className={"font-bold text-gray-900 dark:text-white"}>
-                  {index +
-                    leaderboardData.promoted.length +
-                    leaderboardData.regular.length +
-                    1}
-                </Text>
-                <ProfileCard
-                  key={user.id}
-                  id={user.id.toString()}
-                  avatar={user.avatar}
-                  points={user.points}
-                />
-              </View>
-            ))}
-          </View>
+              )}
+            </View>
+          )}
         </View>
       </ScrollView>
     </View>
   );
 };
 
-const ProfileCard = (props: { id: string; avatar: string; points: number }) => {
-  const { id, avatar, points } = props;
+const ProfileRow = (props: {
+  name: string;
+  avatarUrl: string;
+  points: number;
+  colors: ReturnType<typeof getColors>;
+}) => {
+  const { name, avatarUrl, points, colors } = props;
   return (
     <View className="flex-row items-center justify-between flex-1">
       <View className="flex-row items-center gap-2">
         <Avatar size="sm" alt="">
-          <Avatar.Image source={{ uri: avatar }} />
-          <Avatar.Fallback>JD</Avatar.Fallback>
+          <Avatar.Image source={{ uri: avatarUrl }} />
+          <Avatar.Fallback>{name?.[0] ?? "U"}</Avatar.Fallback>
         </Avatar>
-        <Text className="text-lg font-semibold text-gray-900 dark:text-white">
-          User {id}
+        <Text
+          className="text-lg font-semibold"
+          style={{ color: colors.text.primary }}
+        >
+          {name}
         </Text>
       </View>
-      <Text className="text-gray-600 dark:text-gray-400">{points} pts</Text>
+      <Text style={{ color: colors.text.secondary }}>{points} pts</Text>
     </View>
   );
 };
 
-const Ranks = () => {
-  return (
-    <View className={"h-fit py-6"}>
-      <ScrollView
-        horizontal
-        className={"w-full "}
-        showsHorizontalScrollIndicator={false}
-      >
-        <View className={"px-5 flex flex-row gap-4"}>
-          {ranks.map((rank) => (
-            <View key={rank.id} className="flex h-fit items-center">
-              <Image source={rank.image} style={{ width: 72, height: 72 }} />
-            </View>
-          ))}
-        </View>
-      </ScrollView>
-    </View>
-  );
+// Helper to add alpha to hex color (#RRGGBB -> #RRGGBBAA)
+const withAlpha = (hex: string, alpha: number) => {
+  if (!hex || !hex.startsWith("#") || (hex.length !== 7 && hex.length !== 9)) {
+    return hex;
+  }
+  const a = Math.round(Math.min(1, Math.max(0, alpha)) * 255)
+    .toString(16)
+    .padStart(2, "0");
+  // If already #RRGGBBAA, replace AA; else append AA
+  return hex.length === 9 ? `${hex.slice(0, 7)}${a}` : `${hex}${a}`;
 };
 
-const ranks = [
-  {
-    id: 20,
-    image: require("../../../assets/images/bronze.png"),
-    name: "Bronze Rank",
-  },
-  {
-    id: 21,
-    image: require("../../../assets/images/silver.png"),
-    name: "Silver Rank",
-  },
-  {
-    id: 22,
-    image: require("../../../assets/images/gold.png"),
-    name: "Gold Rank",
-  },
-  {
-    id: 23,
-    image: require("../../../assets/images/platinum.png"),
-    name: "Platinum Rank",
-  },
-  {
-    id: 24,
-    image: require("../../../assets/images/diamond.png"),
-    name: "Diamond Rank",
-  },
-];
-
-const leaderboardData = {
-  promoted: [
-    {
-      id: 1,
-      avatar: "https://i.pravatar.cc/100?img=1",
-      name: "Alice",
-      points: 1500,
-    },
-    {
-      id: 2,
-      avatar: "https://i.pravatar.cc/100?img=2",
-      name: "Bob",
-      points: 1400,
-    },
-    {
-      id: 3,
-      avatar: "https://i.pravatar.cc/100?img=3",
-      name: "Charlie",
-      points: 1300,
-    },
-  ],
-  regular: [
-    {
-      id: 4,
-      avatar: "https://i.pravatar.cc/100?img=4",
-      name: "David",
-      points: 1200,
-    },
-    {
-      id: 5,
-      avatar: "https://i.pravatar.cc/100?img=5",
-      name: "Eve",
-      points: 1100,
-    },
-    {
-      id: 6,
-      avatar: "https://i.pravatar.cc/100?img=6",
-      name: "Frank",
-      points: 1000,
-    },
-    {
-      id: 7,
-      avatar: "https://i.pravatar.cc/100?img=7",
-      name: "Grace",
-      points: 900,
-    },
-    {
-      id: 8,
-      avatar: "https://i.pravatar.cc/100?img=8",
-      name: "Heidi",
-      points: 800,
-    },
-    {
-      id: 9,
-      avatar: "https://i.pravatar.cc/100?img=9",
-      name: "Ivan",
-      points: 700,
-    },
-    {
-      id: 10,
-      avatar: "https://i.pravatar.cc/100?img=10",
-      name: "Judy",
-      points: 600,
-    },
-  ],
-  demoted: [
-    {
-      id: 11,
-      avatar: "https://i.pravatar.cc/100?img=11",
-      name: "Mallory",
-      points: 500,
-    },
-    {
-      id: 12,
-      avatar: "https://i.pravatar.cc/100?img=12",
-      name: "Niaj",
-      points: 400,
-    },
-    {
-      id: 13,
-      avatar: "https://i.pravatar.cc/100?img=13",
-      name: "Olivia",
-      points: 300,
-    },
-  ],
-};
-
-const TopThreeCard = (props: {
-  id: string;
-  avatar: string;
-  name: string;
-  points: number;
-  rank: number;
+const Top3 = ({
+  entries,
+  getAvatarUrl,
+  colors,
+}: {
+  entries: {
+    profile: { full_name: string; email: string; avatar_url: string };
+    points_total: number;
+    rank: number;
+  }[];
+  getAvatarUrl: (path?: string | null) => string | undefined;
+  colors: ReturnType<typeof getColors>;
 }) => {
-  const bgColors = ["bg-yellow-300", "bg-gray-300", "bg-orange-300"];
+  if (!entries || entries.length === 0) return null;
+
+  const sizes = [64, 88, 64]; // left(2nd), center(1st), right(3rd)
+  const order = [1, 0, 2]; // display: 2nd, 1st, 3rd
+  const ITEM_WIDTH = 110; // fixed width to prevent layout shift on long names
+
   return (
-    <View key={props.id} className="flex-row items-center justify-between mb-4">
-      <View
-        className={`flex-1 m-2 p-4 rounded-xl items-center ${bgColors[props.rank - 1]}`}
-      >
-        <Text className="text-lg font-semibold text-gray-900 dark:text-white mt-2">
-          {props.name}
-        </Text>
-        <Text className="text-gray-600 dark:text-gray-400">
-          {props.points} pts
-        </Text>
-        <View className="px-3 py-1 rounded-full bg-gray-200 dark:bg-gray-700 mt-2">
-          <Text className="text-sm font-bold text-gray-900 dark:text-white">
-            #{props.rank}
-          </Text>
+    <View className="w-full flex-row items-end justify-center">
+      {order.map((i, displayIdx) => {
+        const e = entries[i];
+        if (!e)
+          return (
+            <View
+              key={`empty-${i}`}
+              style={{ width: ITEM_WIDTH, alignItems: "center" }}
+            />
+          );
+        const avatar =
+          getAvatarUrl(e.profile.avatar_url) ||
+          "https://cdn-icons-png.flaticon.com/512/3237/3237472.png";
+        const name = e.profile.full_name || e.profile.email || "User";
+        const circleBg = [
+          colors.accent.blue,
+          colors.accent.purple,
+          colors.accent.orange,
+        ][displayIdx];
+        const size = sizes[displayIdx];
+        return (
+          <View
+            key={`top-${e.rank}`}
+            style={{
+              width: ITEM_WIDTH,
+              alignItems: "center",
+              marginHorizontal: 6,
+            }}
+          >
+            <View
+              className="rounded-full items-center justify-center"
+              style={{
+                width: size + 14,
+                height: size + 14,
+                backgroundColor: withAlpha(circleBg, 0.2),
+              }}
+            >
+              <Image
+                source={{ uri: avatar }}
+                style={{ width: size, height: size, borderRadius: size / 2 }}
+              />
+            </View>
+            <View
+              className="px-2 py-0.5 rounded-full mt-2"
+              style={{ backgroundColor: colors.surface.tertiary }}
+            >
+              <Text
+                className="text-xs font-bold"
+                style={{ color: colors.text.primary }}
+              >
+                #{e.rank} • {e.points_total}
+              </Text>
+            </View>
+            <Text
+              className="mt-1 text-sm font-semibold"
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              style={{
+                color: colors.text.primary,
+                width: ITEM_WIDTH - 10,
+                textAlign: "center",
+              }}
+            >
+              {name}
+            </Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+};
+
+const Top3Skeleton = ({
+  colors,
+}: {
+  colors: { chip: string; text: string };
+}) => {
+  const ITEM_WIDTH = 110;
+  const circleSizes = [64, 88, 64];
+  return (
+    <View className="w-full flex-row items-end justify-center">
+      {circleSizes.map((size, idx) => (
+        <View
+          key={`sk-${idx}`}
+          style={{
+            width: ITEM_WIDTH,
+            alignItems: "center",
+            marginHorizontal: 6,
+          }}
+        >
+          <View
+            className="rounded-full"
+            style={{
+              width: size + 14,
+              height: size + 14,
+              backgroundColor: colors.chip,
+              opacity: 0.4,
+            }}
+          />
+          <View
+            className="mt-2 rounded-full"
+            style={{
+              width: 60,
+              height: 16,
+              backgroundColor: colors.chip,
+              opacity: 0.3,
+            }}
+          />
+          <View
+            className="mt-1 rounded"
+            style={{
+              width: ITEM_WIDTH - 10,
+              height: 14,
+              backgroundColor: colors.chip,
+              opacity: 0.3,
+            }}
+          />
         </View>
-      </View>
+      ))}
+    </View>
+  );
+};
+
+const ListSkeleton = ({ colors }: { colors: { row: string } }) => {
+  return (
+    <View className="flex flex-col gap-4">
+      {Array.from({ length: 8 }).map((_, idx) => (
+        <View key={`sk-${idx}`} className="w-full flex-row items-center gap-3">
+          <View
+            className="w-8 h-4 rounded"
+            style={{ backgroundColor: colors.row }}
+          />
+          <View
+            className="w-10 h-10 rounded-full"
+            style={{ backgroundColor: colors.row }}
+          />
+          <View
+            className="flex-1 h-5 rounded"
+            style={{ backgroundColor: colors.row }}
+          />
+          <View
+            className="w-12 h-4 rounded"
+            style={{ backgroundColor: colors.row }}
+          />
+        </View>
+      ))}
     </View>
   );
 };

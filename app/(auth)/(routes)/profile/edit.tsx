@@ -1,7 +1,7 @@
 import {
-    useGetProfileQuery,
-    useUpdateAvatarMutation,
-    useUpdateProfileMutation,
+  useGetProfileQuery,
+  useUpdateAvatarMutation,
+  useUpdateProfileMutation,
 } from "@/lib/features/profile/profileApi";
 import { useAppSelector } from "@/lib/hooks";
 import { supabase } from "@/lib/supabase";
@@ -12,14 +12,14 @@ import { router } from "expo-router";
 import { useColorScheme } from "nativewind";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Image,
-    Pressable,
-    ScrollView,
-    Text,
-    TextInput,
-    View,
+  ActivityIndicator,
+  Alert,
+  Image,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -81,7 +81,7 @@ const EditProfile = () => {
     } catch (error: any) {
       Alert.alert(
         "Error",
-        error?.data?.message || error?.message || "Failed to update profile"
+        error?.data?.message || error?.message || "Failed to update profile",
       );
     }
   };
@@ -93,11 +93,12 @@ const EditProfile = () => {
   const handleEditAvatar = async () => {
     try {
       // Request permissions
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
         Alert.alert(
           "Permission needed",
-          "Sorry, we need camera roll permissions to change your avatar!"
+          "Sorry, we need camera roll permissions to change your avatar!",
         );
         return;
       }
@@ -115,7 +116,7 @@ const EditProfile = () => {
               if (cameraStatus !== "granted") {
                 Alert.alert(
                   "Permission needed",
-                  "Sorry, we need camera permissions!"
+                  "Sorry, we need camera permissions!",
                 );
                 return;
               }
@@ -151,7 +152,7 @@ const EditProfile = () => {
             style: "cancel",
           },
         ],
-        { cancelable: true }
+        { cancelable: true },
       );
     } catch (error: any) {
       Alert.alert("Error", error.message || "Failed to open image picker");
@@ -175,7 +176,7 @@ const EditProfile = () => {
     } catch (error: any) {
       Alert.alert(
         "Error",
-        error?.data?.message || error?.message || "Failed to upload avatar"
+        error?.data?.message || error?.message || "Failed to upload avatar",
       );
     }
   };
@@ -227,10 +228,7 @@ const EditProfile = () => {
                   className="w-full h-full items-center justify-center"
                   style={{ backgroundColor: colors.surface.secondary }}
                 >
-                  <ActivityIndicator
-                    size="large"
-                    color={colors.primary.main}
-                  />
+                  <ActivityIndicator size="large" color={colors.primary.main} />
                 </View>
               ) : (
                 <Image
@@ -298,6 +296,7 @@ const EditProfile = () => {
               placeholderTextColor={colors.text.secondary}
               keyboardType="email-address"
               autoCapitalize="none"
+              editable={false}
             />
           </View>
         </View>
@@ -318,7 +317,7 @@ const EditProfile = () => {
             ) : (
               <Text
                 className="text-base font-semibold"
-                style={{ color: colors.text.inverse }}
+                style={{ color: colors.text.button }}
               >
                 Save settings
               </Text>
@@ -331,4 +330,3 @@ const EditProfile = () => {
 };
 
 export default EditProfile;
-

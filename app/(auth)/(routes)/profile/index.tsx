@@ -1,36 +1,26 @@
 import SignOutButton from "@/components/SignOutButton";
-import { useGetProfileQuery } from "@/lib/features/profile/profileApi";
+import {
+  useGetProfileQuery,
+  useGetTotalExpQuery,
+  useGetLastWeekRankQuery,
+} from "@/lib/features/profile/profileApi";
 import { useAppSelector } from "@/lib/hooks";
 import { supabase } from "@/lib/supabase";
 import { getColors } from "@/utls/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useColorScheme } from "nativewind";
-import React, { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Image,
-  Modal,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from "react-native";
+import React, { useState } from "react";
+import { Image, Modal, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-interface ProfileStats {
-  streaks: number;
-  totalExp: number;
-  currentLeague: string;
-  topFinishes: number;
-}
+import { useFocusEffect } from "@react-navigation/native";
 
 const Profile = () => {
   const { colorScheme } = useColorScheme();
   const colors = getColors(colorScheme === "dark");
   const [modalVisible, setModalVisible] = useState(false);
   const user = useAppSelector((state) => state.auth.auth);
-  const { data: profile } = useGetProfileQuery();
+  const { data: profile, isLoading: isLoadingProfile } = useGetProfileQuery();
 
   // Helper function to get avatar URL from path
   const getAvatarUrl = (avatarPath: string | null | undefined): string => {
@@ -46,35 +36,30 @@ const Profile = () => {
     return data.publicUrl;
   };
 
-  const [stats, setStats] = useState<ProfileStats>({
-    streaks: 0,
-    totalExp: 0,
-    currentLeague: "Bronze",
-    topFinishes: 0,
-  });
-  const [loading, setLoading] = useState(true);
+  // Use RTK Query to get total EXP for current authenticated user
+  const {
+    data: totalExpData,
+    isLoading: isLoadingTotalExp,
+    refetch: refetchTotalExp,
+  } = useGetTotalExpQuery();
 
-  const fetchUserStatsData = async () => {
-    try {
-      setLoading(true);
-      setStats({
-        streaks: 7,
-        totalExp: 1250,
-        currentLeague: "Silver",
-        topFinishes: 3,
-      });
-    } catch (error) {
-      console.error("Error setting default user stats:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    data: lastWeekData,
+    isLoading: isLoadingLastWeek,
+    refetch: refetchLastWeek,
+  } = useGetLastWeekRankQuery();
 
-  useEffect(() => {
-    if (user.userId) {
-      fetchUserStatsData();
-    }
-  }, [user.userId]);
+  // Refetch total EXP and last week rank when screen gains focus
+  useFocusEffect(
+    React.useCallback(() => {
+      if (typeof refetchTotalExp === "function") refetchTotalExp();
+      if (typeof refetchLastWeek === "function") refetchLastWeek();
+    }, [refetchTotalExp, refetchLastWeek]),
+  );
+
+  // Derive display values
+  const streaks = profile?.streak_days ?? 0;
+  const totalExp = totalExpData ?? 0;
 
   const menuItems = [
     {
@@ -178,99 +163,76 @@ const Profile = () => {
           </Text>
 
           {/* Email */}
-          <Text
-            className="text-base"
-            style={{ color: colors.text.secondary }}
-          >
+          <Text className="text-base" style={{ color: colors.text.secondary }}>
             {profile?.email || user.email || "No email"}
           </Text>
         </View>
 
-        {/* Statistics Section */}
-        {loading ? (
-          <View className="py-12 items-center">
-            <ActivityIndicator size="large" color={colors.primary.main} />
-            <Text
-              className="mt-4 text-sm"
-              style={{ color: colors.text.secondary }}
-            >
-              Loading statistics...
-            </Text>
-          </View>
-        ) : (
-          <View className="px-6 mb-8">
-            <View className="flex-row justify-around">
-              {/* Streak Stat */}
-              <View className="items-center flex-1">
-                <View className="mb-2">
-                  <Ionicons
-                    name="flame"
-                    size={28}
-                    color={colors.accent.red}
-                  />
-                </View>
-                <Text
-                  className="text-xl font-bold mb-1"
-                  style={{ color: colors.text.primary }}
-                >
-                  {stats.streaks}
-                </Text>
-                <Text
-                  className="text-xs"
-                  style={{ color: colors.text.secondary }}
-                >
-                  Streak
-                </Text>
+        {/* Statistics Section - show per-stat loading as '-' until loaded */}
+        <View className="px-6 mb-8">
+          <View className="flex-row justify-around">
+            {/* Streak Stat */}
+            <View className="items-center flex-1">
+              <View className="mb-2">
+                <Ionicons name="flame" size={28} color={colors.accent.red} />
               </View>
+              <Text
+                className="text-xl font-bold mb-1"
+                style={{ color: colors.text.primary }}
+              >
+                {isLoadingProfile ? "-" : streaks}
+              </Text>
+              <Text
+                className="text-xs"
+                style={{ color: colors.text.secondary }}
+              >
+                Streak
+              </Text>
+            </View>
 
-              {/* EXP Stat */}
-              <View className="items-center flex-1">
-                <View className="mb-2">
-                  <Ionicons
-                    name="flash"
-                    size={28}
-                    color={colors.accent.yellow}
-                  />
-                </View>
-                <Text
-                  className="text-xl font-bold mb-1"
-                  style={{ color: colors.text.primary }}
-                >
-                  {stats.totalExp}
-                </Text>
-                <Text
-                  className="text-xs"
-                  style={{ color: colors.text.secondary }}
-                >
-                  Total EXP
-                </Text>
+            {/* EXP Stat */}
+            <View className="items-center flex-1">
+              <View className="mb-2">
+                <Ionicons name="flash" size={28} color={colors.accent.yellow} />
               </View>
+              <Text
+                className="text-xl font-bold mb-1"
+                style={{ color: colors.text.primary }}
+              >
+                {isLoadingTotalExp ? "-" : totalExp}
+              </Text>
+              <Text
+                className="text-xs"
+                style={{ color: colors.text.secondary }}
+              >
+                Total EXP
+              </Text>
+            </View>
 
-              {/* League Stat */}
-              <View className="items-center flex-1">
-                <View className="mb-2">
-                  <Ionicons
-                    name="diamond"
-                    size={28}
-                    color={colors.accent.yellow}
-                  />
-                </View>
-                <Text
-                  className="text-xl font-bold mb-1"
-                  style={{ color: colors.text.primary }}
-                >
-                  {stats.currentLeague}
-                </Text>
-                <Text
-                  className="text-xs"
-                  style={{ color: colors.text.secondary }}
-                >
-                  League
-                </Text>
+            {/* Last Week Rank Stat */}
+            <View className="items-center flex-1">
+              <View className="mb-2">
+                <Ionicons
+                  name="diamond"
+                  size={28}
+                  color={colors.accent.yellow}
+                />
               </View>
+              <Text
+                className="text-xl font-bold mb-1"
+                style={{ color: colors.text.primary }}
+              >
+                {isLoadingLastWeek ? "-" : (`Top ${lastWeekData?.rank}` ?? "-")}
+              </Text>
+              <Text
+                className="text-xs"
+                style={{ color: colors.text.secondary }}
+              >
+                Last Week
+              </Text>
             </View>
           </View>
-        )}
+        </View>
 
         {/* Menu Items */}
         <View className="px-6">

@@ -72,6 +72,7 @@ export const leaderboardApi = createApi({
           return { error: { message: e?.message ?? "Unknown error" } };
         }
       },
+      keepUnusedDataFor: 0,
       providesTags: ["Leaderboard"],
     }),
   }),
