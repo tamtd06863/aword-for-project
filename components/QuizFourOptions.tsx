@@ -63,23 +63,27 @@ export default function QuizFourOptions(props: QuizFourOptionsProps) {
         </View>
       </View>
 
-      {/* Title */}
-      <View className="px-5 mt-6">
-        <Text
-          className="text-2xl font-semibold"
-          style={{ color: colors.text.primary }}
-        >
-          {props.title}
-        </Text>
-      </View>
-
-      {/* Prompt */}
-      <View className="flex-1 items-center justify-center px-5">
-        <Text
-          className={`text-6xl font-semibold ${props.promptColorClass ?? "text-black"}`}
-        >
-          {props.prompt}
-        </Text>
+      {/* Question Section */}
+      <View className="flex-1 items-center pt-4 px-5">
+        <View className="w-full items-center">
+          
+          {/* Question Prompt with styled container */}
+          <View 
+            className="w-full px-6 py-4 rounded-3xl"
+            style={{ backgroundColor: colors.surface.secondary }}
+          >
+            <Text
+              className={`text-3xl font-semibold leading-relaxed ${props.promptColorClass ?? ""}`}
+              style={{ 
+                color: props.promptColorClass 
+                  ? undefined 
+                  : colors.text.primary 
+              }}
+            >
+              {props.prompt}
+            </Text>
+          </View>
+        </View>
       </View>
 
       {/* Options */}

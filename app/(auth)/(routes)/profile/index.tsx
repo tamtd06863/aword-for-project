@@ -1,21 +1,22 @@
+import SignOutButton from "@/components/SignOutButton";
+import { useGetProfileQuery } from "@/lib/features/profile/profileApi";
 import { useAppSelector } from "@/lib/hooks";
 import { supabase } from "@/lib/supabase";
 import { getColors } from "@/utls/colors";
 import { Ionicons } from "@expo/vector-icons";
-import { Link, router } from "expo-router";
+import { router } from "expo-router";
 import { useColorScheme } from "nativewind";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
+  Modal,
   Pressable,
+  ScrollView,
   Text,
   View,
-  Modal,
-  FlatList,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import SignOutButton from "@/components/SignOutButton";
 
 interface ProfileStats {
   streaks: number;
@@ -29,6 +30,21 @@ const Profile = () => {
   const colors = getColors(colorScheme === "dark");
   const [modalVisible, setModalVisible] = useState(false);
   const user = useAppSelector((state) => state.auth.auth);
+  const { data: profile } = useGetProfileQuery();
+
+  // Helper function to get avatar URL from path
+  const getAvatarUrl = (avatarPath: string | null | undefined): string => {
+    if (!avatarPath) {
+      return user.avatar_url || "https://i.pravatar.cc/150";
+    }
+    // If it's already a full URL, return it
+    if (avatarPath.startsWith("http://") || avatarPath.startsWith("https://")) {
+      return avatarPath;
+    }
+    // Otherwise, it's a path in storage, get public URL
+    const { data } = supabase.storage.from("avatars").getPublicUrl(avatarPath);
+    return data.publicUrl;
+  };
 
   const [stats, setStats] = useState<ProfileStats>({
     streaks: 0,
@@ -38,32 +54,15 @@ const Profile = () => {
   });
   const [loading, setLoading] = useState(true);
 
-  const logout = async () => {
-    await supabase.auth.signOut();
-  };
-
   const fetchUserStatsData = async () => {
     try {
       setLoading(true);
-
-      // Set default stats for now (until user_stats table is created)
       setStats({
         streaks: 7,
         totalExp: 1250,
         currentLeague: "Silver",
         topFinishes: 3,
       });
-
-      // TODO: Uncomment when user_stats table is created in Supabase
-      // const userStats = await fetchUserStats(user.userId);
-      // if (userStats) {
-      //   setStats({
-      //     streaks: userStats.streaks || 0,
-      //     totalExp: userStats.total_exp || 0,
-      //     currentLeague: userStats.current_league || "Bronze",
-      //     topFinishes: userStats.top_finishes || 0,
-      //   });
-      // }
     } catch (error) {
       console.error("Error setting default user stats:", error);
     } finally {
@@ -77,72 +76,20 @@ const Profile = () => {
     }
   }, [user.userId]);
 
-  const StatCard = ({
-    icon,
-    value,
-    label,
-    iconColor,
-  }: {
-    icon: string;
-    value: string;
-    label: string;
-    iconColor: string;
-  }) => (
-    <View
-      className="border rounded-xl p-4 flex-1 mx-1"
-      style={{
-        backgroundColor: colors.background.secondary,
-        borderColor: colors.border.primary,
-      }}
-    >
-      <View className="flex-row items-center">
-        <Ionicons name={icon as any} size={24} color={iconColor} />
-        <View className="ml-3">
-          <Text
-            className="text-2xl font-bold"
-            style={{ color: colors.text.primary }}
-          >
-            {value}
-          </Text>
-          <Text className="text-sm" style={{ color: colors.text.secondary }}>
-            {label}
-          </Text>
-        </View>
-      </View>
-    </View>
-  );
-
-  const statItems = [
+  const menuItems = [
     {
-      key: "streaks",
-      icon: "flame",
-      value: stats.streaks.toString(),
-      label: "Streaks",
-      iconColor: colors.accent.orange,
+      key: "edit",
+      icon: "person-outline" as const,
+      label: "Edit Profile",
+      onPress: () => router.push("/profile/edit"),
     },
     {
-      key: "totalExp",
-      icon: "flash",
-      value: stats.totalExp.toString(),
-      label: "Total exp",
-      iconColor: colors.accent.yellow,
+      key: "achievements",
+      icon: "trophy-outline" as const,
+      label: "Achievements",
+      onPress: () => router.push("/profile/achievements"),
     },
-    {
-      key: "currentLeague",
-      icon: "diamond",
-      value: stats.currentLeague,
-      label: "Current league",
-      iconColor: colors.accent.yellow,
-    },
-    {
-      key: "topFinishes",
-      icon: "trophy",
-      value: stats.topFinishes.toString(),
-      label: "Top 1 finishes",
-      iconColor: colors.accent.yellow,
-      href: "/profile/achievements",
-    },
-  ] as const;
+  ];
 
   return (
     <SafeAreaView
@@ -153,139 +100,212 @@ const Profile = () => {
         animationType="slide"
         transparent={true}
         visible={modalVisible}
-        onRequestClose={() => {
-          setModalVisible(!modalVisible);
-        }}
+        onRequestClose={() => setModalVisible(false)}
       >
         <Pressable
-          className={"flex-1 justify-center items-center"}
-          onPress={() => setModalVisible(false)} // 👉 click ra ngoài sẽ đóng modal
+          className="flex-1 justify-end"
+          onPress={() => setModalVisible(false)}
         >
           <Pressable
-            className={"h-40 mt-auto p-6 border-t w-full"}
+            className="h-40 p-6 border-t w-full rounded-t-3xl"
             style={{
               backgroundColor: colors.background.secondary,
-              borderColor: colors.border.secondary,
+              borderTopColor: colors.border.primary,
             }}
-            onPress={(e) => e.stopPropagation()} // 👉 chặn click bên trong modal làm đóng
+            onPress={(e) => e.stopPropagation()}
           >
-            <View className={"w-full items-end"}></View>
-            <SignOutButton />
+            <View className="w-full items-end">
+              <SignOutButton />
+            </View>
           </Pressable>
         </Pressable>
       </Modal>
 
-      {/* Header with Orange Background */}
-      <View
-        className="pt-4 pb-20 px-6"
-        style={{ backgroundColor: colors.accent.orange }}
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 20 }}
       >
-        <View className="flex-row items-center justify-between">
-          <View className="flex-row items-center">
-            <Pressable onPress={() => router.push("/home")}>
+        {/* Header */}
+        <View className="px-6 pt-4 pb-6">
+          <View className="flex-row items-center justify-between">
+            <Pressable onPress={() => router.back()}>
               <Ionicons
                 name="arrow-back"
                 size={24}
-                color={colors.text.inverse}
+                color={colors.text.primary}
               />
             </Pressable>
             <Text
-              className="text-xl font-semibold ml-4"
-              style={{ color: colors.text.inverse }}
+              className="text-xl font-bold"
+              style={{ color: colors.text.primary }}
             >
               Profile
             </Text>
-          </View>
-          <Pressable onPress={() => setModalVisible(true)}>
-            <Ionicons
-              name="ellipsis-vertical"
-              size={24}
-              color={colors.text.inverse}
-            />
-          </Pressable>
-        </View>
-
-        {/* Avatar - Centered and overlapping */}
-        <View className="items-center">
-          <View className="w-24 h-24 rounded-full items-center justify-center">
-            <Image
-              source={{
-                uri: user.avatar_url || "https://i.pravatar.cc/100",
-              }}
-              className="w-20 h-20 rounded-full"
-            />
+            <Pressable onPress={() => setModalVisible(true)}>
+              <Ionicons
+                name="ellipsis-vertical"
+                size={24}
+                color={colors.text.primary}
+              />
+            </Pressable>
           </View>
         </View>
-      </View>
 
-      {/* User Information */}
-      <View
-        className="px-6 pt-4 pb-6 flex flex-col items-start"
-        style={{ backgroundColor: colors.background.secondary }}
-      >
-        <Text
-          className="text-3xl font-semibold text-center mb-2"
-          style={{ color: colors.text.primary }}
-        >
-          {user.name || "User"}
-        </Text>
-        <View className="flex-row items-center justify-center">
-          <Text className="text-base" style={{ color: colors.text.secondary }}>
-            {user.email || "No email"}
+        {/* User Profile Section */}
+        <View className="items-center px-6 mb-8">
+          {/* Avatar with Edit Button */}
+          <View className="relative mb-4">
+            <View className="w-32 h-32 rounded-full overflow-hidden">
+              <Image
+                source={{
+                  uri:
+                    getAvatarUrl(profile?.avatar_url) ||
+                    user.avatar_url ||
+                    "https://i.pravatar.cc/150",
+                }}
+                className="w-full h-full"
+              />
+            </View>
+          </View>
+
+          {/* Name */}
+          <Text
+            className="text-2xl font-bold mb-1"
+            style={{ color: colors.text.primary }}
+          >
+            {profile?.full_name || user.name || "User"}
+          </Text>
+
+          {/* Email */}
+          <Text
+            className="text-base"
+            style={{ color: colors.text.secondary }}
+          >
+            {profile?.email || user.email || "No email"}
           </Text>
         </View>
-      </View>
 
-      {/* Statistics Section */}
-      <View className="flex-1 px-6 pt-8">
-        <Text
-          className="text-xl font-bold mb-6"
-          style={{ color: colors.text.primary }}
-        >
-          Statistics
-        </Text>
+        {/* Statistics Section */}
+        {loading ? (
+          <View className="py-12 items-center">
+            <ActivityIndicator size="large" color={colors.primary.main} />
+            <Text
+              className="mt-4 text-sm"
+              style={{ color: colors.text.secondary }}
+            >
+              Loading statistics...
+            </Text>
+          </View>
+        ) : (
+          <View className="px-6 mb-8">
+            <View className="flex-row justify-around">
+              {/* Streak Stat */}
+              <View className="items-center flex-1">
+                <View className="mb-2">
+                  <Ionicons
+                    name="flame"
+                    size={28}
+                    color={colors.accent.red}
+                  />
+                </View>
+                <Text
+                  className="text-xl font-bold mb-1"
+                  style={{ color: colors.text.primary }}
+                >
+                  {stats.streaks}
+                </Text>
+                <Text
+                  className="text-xs"
+                  style={{ color: colors.text.secondary }}
+                >
+                  Streak
+                </Text>
+              </View>
 
-        {/* Statistics Grid */}
-        <View className="flex-1">
-          {loading ? (
-            <View className="flex-1 justify-center items-center">
-              <ActivityIndicator size="large" color={colors.primary.main} />
-              <Text className="mt-4" style={{ color: colors.text.secondary }}>
-                Loading statistics...
-              </Text>
+              {/* EXP Stat */}
+              <View className="items-center flex-1">
+                <View className="mb-2">
+                  <Ionicons
+                    name="flash"
+                    size={28}
+                    color={colors.accent.yellow}
+                  />
+                </View>
+                <Text
+                  className="text-xl font-bold mb-1"
+                  style={{ color: colors.text.primary }}
+                >
+                  {stats.totalExp}
+                </Text>
+                <Text
+                  className="text-xs"
+                  style={{ color: colors.text.secondary }}
+                >
+                  Total EXP
+                </Text>
+              </View>
+
+              {/* League Stat */}
+              <View className="items-center flex-1">
+                <View className="mb-2">
+                  <Ionicons
+                    name="diamond"
+                    size={28}
+                    color={colors.accent.yellow}
+                  />
+                </View>
+                <Text
+                  className="text-xl font-bold mb-1"
+                  style={{ color: colors.text.primary }}
+                >
+                  {stats.currentLeague}
+                </Text>
+                <Text
+                  className="text-xs"
+                  style={{ color: colors.text.secondary }}
+                >
+                  League
+                </Text>
+              </View>
             </View>
-          ) : (
-            <>
-              {/* Top Row */}
-              <FlatList
-                data={statItems as unknown as ReadonlyArray<any>}
-                keyExtractor={(item: any) => item.key}
-                numColumns={2}
-                renderItem={({ item }: { item: any }) => {
-                  const content = (
-                    <StatCard
-                      icon={item.icon}
-                      value={item.value}
-                      label={item.label}
-                      iconColor={item.iconColor}
-                    />
-                  );
-                  if (item.href) {
-                    return (
-                      <Link href={item.href} asChild>
-                        <Pressable className="flex-1 mb-3">{content}</Pressable>
-                      </Link>
-                    );
-                  }
-                  return <View className="flex-1 mb-3">{content}</View>;
-                }}
-                contentContainerStyle={{ paddingBottom: 16 }}
-                showsVerticalScrollIndicator={false}
+          </View>
+        )}
+
+        {/* Menu Items */}
+        <View className="px-6">
+          {menuItems.map((item, index) => (
+            <Pressable
+              key={item.key}
+              className="flex-row items-center justify-between py-4"
+              style={{
+                borderBottomWidth: index < menuItems.length - 1 ? 1 : 0,
+                borderBottomColor: colors.border.primary,
+              }}
+              onPress={item.onPress}
+            >
+              <View className="flex-row items-center flex-1">
+                <Ionicons
+                  name={item.icon}
+                  size={24}
+                  color={colors.text.primary}
+                />
+                <Text
+                  className="ml-4 text-base"
+                  style={{ color: colors.text.primary }}
+                >
+                  {item.label}
+                </Text>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={colors.text.secondary}
               />
-            </>
-          )}
+            </Pressable>
+          ))}
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };

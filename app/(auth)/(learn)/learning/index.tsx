@@ -4,7 +4,9 @@ import NewWordDetail from "@/components/NewWordDetail";
 import QuizFourOptions from "@/components/QuizFourOptions";
 import QuizResult from "@/components/QuizResult";
 import { useGetQuestionsQuery } from "@/lib/features/learn/learnApi";
+import { useLazyGetProfileQuery } from "@/lib/features/profile/profileApi";
 import {
+  useLazyGetTotalLearnedVocabCountQuery,
   useUpdateVocabsProgressMutation,
   type QuestionResult,
   useLazyGetTotalLearnedVocabCountQuery,
@@ -14,7 +16,6 @@ import { router } from "expo-router";
 import { useColorScheme } from "nativewind";
 import React from "react";
 import { ActivityIndicator, Text, View } from "react-native";
-import { useLazyGetProfileQuery } from "@/lib/features/profile/profileApi";
 
 const Index = () => {
   const { colorScheme } = useColorScheme();
@@ -179,12 +180,15 @@ const Index = () => {
               const correctIndex = opts.findIndex(
                 (opt) => opt === q.correct_answer,
               );
+              // Replace !empty with a visual blank indicator
+              const formattedQuestion = q.question.replace(/!empty/gi, "___");
+              
               return (
                 <QuizFourOptions
                   key={`quiz-${currentQuestionIndex}`}
                   progress={overallProgress}
-                  title={q.question}
-                  prompt={q.question}
+                  title=""
+                  prompt={formattedQuestion}
                   promptColorClass="text-red-600"
                   options={opts}
                   selectedIndex={selected[currentQuestionIndex]}
@@ -315,21 +319,25 @@ const Index = () => {
 
         {/* Result step */}
         <QuizResult
+          questionResults={questionResults}
           stats={[
             {
               icon: "timer-outline",
               color: colors.accent.purple,
-              text: `${formatTime(totalTimeSec)}`,
+              text: "Time",
+              value: formatTime(totalTimeSec),
             },
             {
               icon: "flame-outline",
               color: colors.accent.red,
-              text: `${maxStreak} in a row`,
+              text: "Streak",
+              value: `${maxStreak} questions`,
             },
             {
               icon: "flash-outline",
               color: colors.accent.yellow,
-              text: `${expGained} exp`,
+              text: "EXP",
+              value: `${expGained}`,
             },
           ]}
           onContinue={() => router.back()}
