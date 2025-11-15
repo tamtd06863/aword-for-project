@@ -27,7 +27,7 @@ export const learnApi = createApi({
   endpoints: (builder) => ({
     getQuestions: builder.query<Lesson, void>({
       query: () => ({
-        url: "/get_questions",
+        url: "/get_questions_v2",
         method: "POST",
       }),
       keepUnusedDataFor: 0,

@@ -1,7 +1,5 @@
 import { useGetProfileQuery } from "@/lib/features/profile/profileApi";
-import {
-  useGetTotalLearnedVocabCountQuery
-} from "@/lib/features/vocab/vocabApi";
+import { useGetTotalLearnedVocabCountQuery } from "@/lib/features/vocab/vocabApi";
 import { useAppSelector } from "@/lib/hooks";
 import { supabase } from "@/lib/supabase";
 import { getColors } from "@/utls/colors";
@@ -200,7 +198,7 @@ const Home = () => {
       )}
 
       {/* Menu buttons */}
-      <Link href={"/learning"} asChild>
+      <Link href={"learning/select-root"} asChild>
         <Pressable
           className="mb-6 rounded-2xl shadow-sm"
           style={{ backgroundColor: colors.primary.main }}

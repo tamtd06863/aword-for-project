@@ -1,6 +1,7 @@
 import { leaderboardSupabase, supabase } from "@/lib/supabase";
 import type { Vocabulary } from "@/models/Vocabulary";
 import { createApi, fakeBaseQuery } from "@reduxjs/toolkit/query/react";
+import { Root } from "@/models/Root";
 
 // Lightweight error shape for queryFn
 type VocabError = { message: string; code?: string };
@@ -418,6 +419,255 @@ export const vocabApi = createApi({
       },
       keepUnusedDataFor: 0,
     }),
+    getRoots: builder.query<Root[] | null, void>({
+      async queryFn(_arg, _api, _extraOptions, _baseQuery) {
+        console.log("getRoots queryFn called");
+        const { data, error } = await supabase
+          .from("roots")
+          .select("*,vocab(*)");
+        if (error) {
+          console.log("Error fetching roots:", error);
+          return {
+            error: { message: error.message, code: error.code ?? "UNKNOWN" },
+          };
+        }
+        if (!data) {
+          return {
+            error: { message: "No data returned", code: "NO_DATA" },
+          };
+        }
+
+        return {
+          data: data.map((d) => {
+            return {
+              ...d,
+              word_count: d.vocab ? d.vocab.length : 0,
+            };
+          }) as Root[],
+        };
+      },
+    }),
+    getRootById: builder.query<Root | null, string>({
+      async queryFn(id, _api, _extraOptions, _baseQuery) {
+        console.log("Fetching root by ID:", id);
+        const { data, error } = await supabase
+          .from("roots")
+          .select("*,vocab(*)")
+          .eq("id", id)
+          .single();
+        if (error) {
+          console.log("Error fetching root by ID:", error);
+          return {
+            error: { message: error.message, code: error.code ?? "UNKNOWN" },
+          };
+        }
+        if (!data) {
+          return {
+            error: { message: "No data returned", code: "NO_DATA" },
+          };
+        }
+
+        return {
+          data: {
+            ...data,
+            word_count: data.vocab ? data.vocab.length : 0,
+          } as Root,
+        };
+      },
+    }),
+    findProgressingRoot: builder.query<boolean | null, void>({
+      keepUnusedDataFor: 0,
+      async queryFn(_arg, _api, _extraOptions, _baseQuery) {
+        //get user id
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const userId = session?.user.id;
+        if (!userId) {
+          return {
+            error: { message: "User not authenticated", code: "UNAUTHORIZED" },
+          };
+        }
+
+        const { data, error } = await supabase
+          .from("profile_root_progress")
+          .select("root_id")
+          .eq("profile_id", userId)
+          .eq("is_learning", true)
+          .maybeSingle();
+
+        console.log("findProgressingRoot data:", data);
+        if (error) {
+          console.log("Error finding progressing root:", error);
+          return {
+            error: { message: error.message, code: error.code ?? "UNKNOWN" },
+          };
+        }
+
+        return data ? { data: true } : { data: false };
+      },
+    }),
+    assignWordToRoot: builder.mutation<
+      null,
+      { wordCount: number; rootId: string }
+    >({
+      async queryFn({ wordCount, rootId }, _api, _extraOptions, _baseQuery) {
+        // get word by wordCount
+        const { data: vocabData, error: vocabError } = await supabase
+          .from("vocab")
+          .select("*")
+          .eq("root_id", rootId)
+          .limit(wordCount)
+          .order("id", { ascending: true });
+
+        if (vocabError) {
+          console.log("Error fetching vocab:", vocabError);
+          return {
+            error: {
+              message: vocabError.message,
+              code: vocabError.code ?? "UNKNOWN",
+            },
+          };
+        }
+
+        const vocabIds = vocabData?.map((v) => v.id) || [];
+
+        // update vocab items to set root_id
+        // get current user id once (avoid creating promises inside the upsert rows)
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const profileId = session?.user.id;
+        if (!profileId) {
+          return {
+            error: { message: "User not authenticated", code: "UNAUTHORIZED" },
+          };
+        }
+
+        const rows = vocabIds.map((vocabId) => ({
+          profile_id: profileId,
+          vocab_id: vocabId,
+        }));
+
+        const { error: updateError } = await supabase
+          .from("profile_vocab_progress")
+          .upsert(rows);
+
+        if (updateError) {
+          console.log("Error updating vocab items:", updateError);
+          return {
+            error: {
+              message: updateError.message,
+              code: updateError.code ?? "UNKNOWN",
+            },
+          };
+        }
+
+        // assign the root_id to profile_root_progress
+        const { error: rootProgressError } = await supabase
+          .from("profile_root_progress")
+          .upsert({
+            profile_id: profileId,
+            root_id: rootId,
+            is_learning: true,
+          });
+
+        if (rootProgressError) {
+          console.log("Error updating root progress:", rootProgressError);
+          return {
+            error: {
+              message: rootProgressError.message,
+              code: rootProgressError.code ?? "UNKNOWN",
+            },
+          };
+        }
+
+        // RTK Query requires a defined data value; use null for void-like responses
+        return { data: null };
+      },
+    }),
+    getLearningVocabsByProfileId: builder.query<Vocabulary[] | null, void>({
+      async queryFn(_arg, _api, _extraOptions, _baseQuery) {
+        // get user id
+        console.log("Fetched learning vocabs:");
+
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const profileId = session?.user.id;
+        if (!profileId) {
+          return {
+            error: { message: "User not authenticated", code: "UNAUTHORIZED" },
+          };
+        }
+
+        const { data, error } = await supabase
+          .from("profile_vocab_progress")
+          .select("vocab(*,vocab_senses(*),vocab_examples(*))")
+          .eq("profile_id", profileId)
+          .eq("proficiency", 0);
+
+        console.log("Data:", data);
+
+        if (error) {
+          console.log("Error fetching learning vocabs:", error);
+          return {
+            error: { message: error.message, code: error.code ?? "UNKNOWN" },
+          };
+        }
+        if (!data) {
+          return {
+            error: { message: "No data returned", code: "NO_DATA" },
+          };
+        }
+
+        const vocabs = data.map((d) => d.vocab) as unknown as Vocabulary[];
+        return {
+          data: vocabs.map((v) => {
+            return {
+              ...v,
+              definition_vi:
+                v.vocab_senses && v.vocab_senses.length > 0
+                  ? v.vocab_senses[0].definition
+                  : "",
+              pos:
+                v.vocab_senses && v.vocab_senses.length > 0
+                  ? v.vocab_senses[0].pos
+                  : "",
+            };
+          }),
+        };
+      },
+    }),
+    setProgressingRootToFalse: builder.mutation<null, void>({
+      async queryFn(_arg, _api, _extraOptions, _baseQuery) {
+        // get user id
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const profileId = session?.user.id;
+        if (!profileId) {
+          return {
+            error: { message: "User not authenticated", code: "UNAUTHORIZED" },
+          };
+        }
+
+        const { error } = await supabase
+          .from("profile_root_progress")
+          .update({ is_learning: false })
+          .eq("profile_id", profileId)
+          .eq("is_learning", true);
+
+        if (error) {
+          return {
+            error: { message: error.message, code: error.code ?? "UNKNOWN" },
+          };
+        }
+
+        // RTK Query requires a defined data value; use null for void-like responses
+        return { data: null };
+      },
+    }),
   }),
 });
 
@@ -426,4 +676,10 @@ export const {
   useUpdateVocabsProgressMutation,
   useGetTotalLearnedVocabCountQuery,
   useLazyGetTotalLearnedVocabCountQuery,
+  useGetRootsQuery,
+  useGetRootByIdQuery,
+  useFindProgressingRootQuery,
+  useAssignWordToRootMutation,
+  useGetLearningVocabsByProfileIdQuery,
+  useSetProgressingRootToFalseMutation,
 } = vocabApi;

@@ -9,6 +9,7 @@ import {
   useLazyGetTotalLearnedVocabCountQuery,
   useUpdateVocabsProgressMutation,
   type QuestionResult,
+  useSetProgressingRootToFalseMutation,
 } from "@/lib/features/vocab/vocabApi";
 import { getColors } from "@/utls/colors";
 import { router } from "expo-router";
@@ -33,6 +34,7 @@ const Index = () => {
   );
   const [updateProgress, { isLoading: isUpdatingProgress }] =
     useUpdateVocabsProgressMutation();
+  const [setProgressingRootToFalse] = useSetProgressingRootToFalseMutation();
 
   const [getProfile] = useLazyGetProfileQuery();
   const [getTotalLearnedVocabCount] = useLazyGetTotalLearnedVocabCountQuery();
@@ -293,6 +295,7 @@ const Index = () => {
                               }
                               getProfile();
                               getTotalLearnedVocabCount();
+                              setProgressingRootToFalse();
                               setStep(totalWords * 2 + 1);
                             })();
                           }

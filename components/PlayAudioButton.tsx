@@ -1,7 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import { useColorScheme } from "nativewind";
 import { getColors } from "@/utls/colors";
-import { useAudioPlayer } from "expo-audio";
+import { useAudioPlayer, setAudioModeAsync } from "expo-audio";
 import React, { useEffect } from "react";
 import { Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,6 +16,13 @@ const PlayAudioButton = ({ audioPath }: { audioPath: string }) => {
   const { colorScheme } = useColorScheme();
   const colors = getColors(colorScheme === "dark");
   const player = useAudioPlayer(convertPathToAudioUrl(audioPath));
+  player.volume = 1.0;
+
+  useEffect(() => {
+    setAudioModeAsync({
+      playsInSilentMode: true,
+    });
+  }, []);
 
   useEffect(() => {
     if (!audioPath) return;

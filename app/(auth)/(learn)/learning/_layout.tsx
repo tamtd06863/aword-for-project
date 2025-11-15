@@ -6,6 +6,8 @@ const LearningLayout = () => {
     <Stack>
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="overview" options={{ headerShown: false }} />
+      <Stack.Screen name="select-root" options={{ headerShown: false }} />
+      <Stack.Screen name="select-session" options={{ headerShown: false }} />
     </Stack>
   );
 };
